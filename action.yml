@@ -29,5 +29,5 @@ inputs:
     description: 'Set to true for cleaning files on COS path which are not existed in local path. Default is false'
     required: false
 runs:
-  using: 'node14'
+  using: 'node16'
   main: 'dist/index.js'
