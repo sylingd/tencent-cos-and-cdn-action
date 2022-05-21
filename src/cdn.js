@@ -35,6 +35,9 @@ class CDN {
 
   createUrl(file = "") {
     const p = path.join(this.remotePath, file);
+    if (p === "/") {
+      return this.cdnPrefix;
+    }
     return this.cdnPrefix + p;
   }
 
