@@ -1,15 +1,15 @@
-const CDN_SDK = require("tencentcloud-sdk-nodejs/tencentcloud/services/cdn");
+const EO_SDK = require("tencentcloud-sdk-nodejs/tencentcloud/services/teo");
 const path = require("path");
 
-const Client = CDN_SDK.cdn.v20180606.Client;
+const Client = EO_SDK.teo.v20220901.Client;
 
-class CDN {
+class EO {
   static getInput() {
-    return ["secret_id", "secret_key", "session_token", "remote_path", "cdn_prefix", "clean"];
+    return ["secret_id", "secret_key", "session_token", "remote_path", "cdn_prefix", "clean", "eo_zone"];
   }
 
   constructor(inputs) {
-    if (!inputs.cdn_prefix) {
+    if (!inputs.cdn_prefix || !inputs.eo_zone) {
       return;
     }
 
@@ -18,9 +18,6 @@ class CDN {
         secretId: inputs.secret_id,
         secretKey: inputs.secret_key,
       },
-      profile: {
-        language: "en-US",
-      },
     };
 
     if (inputs.session_token) {
@@ -28,6 +25,7 @@ class CDN {
     }
 
     this.client = new Client(clientConfig);
+    this.zoneId = inputs.eo_zone;
     this.clean = inputs.clean === "true";
     this.cdnPrefix = inputs.cdn_prefix;
     this.remotePath = inputs.remote_path;
@@ -46,15 +44,18 @@ class CDN {
   }
 
   purgeAll() {
-    return this.client.PurgePathCache({
-      FlushType: "delete",
-      Paths: [this.createUrl()],
+    return this.client.CreatePurgeTask({
+      ZoneId: this.zoneId,
+      Type: 'purge_prefix',
+      Targets: [this.createUrl()],
     });
   }
 
   purgeUrls(urls) {
-    return this.client.PurgeUrlsCache({
-      Urls: urls,
+    return this.client.CreatePurgeTask({
+      ZoneId: this.zoneId,
+      Type: 'purge_url',
+      Targets: urls,
     });
   }
 
@@ -75,4 +76,4 @@ class CDN {
   }
 }
 
-module.exports = CDN;
+module.exports = EO;

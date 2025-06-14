@@ -11,10 +11,10 @@
   },
   "dependencies": {
     "@actions/core": "^1.6.0",
-    "@actions/github": "^5.0.0",
-    "cos-nodejs-sdk-v5": "^2.11.6",
-    "fs-extra": "^10.0.1",
-    "tencentcloud-sdk-nodejs": "^4.0.297"
+    "@actions/github": "^6.0.1",
+    "cos-nodejs-sdk-v5": "2.16.0-beta.3",
+    "fs-extra": "^11.3.0",
+    "tencentcloud-sdk-nodejs": "^4.1.56"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.33.3"

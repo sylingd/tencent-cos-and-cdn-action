@@ -1,17 +1,21 @@
 # Tencent Cloud COS and CDN action
 
-This action can upload files to tencent cloud COS, and flush CDN cache.
+This action can upload files to tencent cloud COS, and flush CDN cache (support regular CDN and EdgeOne CDN).
 
-该 Action 可以将文件上传到腾讯云 COS，并同时刷新腾讯云 CDN 缓存。
+该 Action 可以将文件上传到腾讯云 COS，并同时刷新腾讯云 CDN 缓存（支持普通 CDN 或 EdgeOne CDN）。
 
 ## Inputs
 
-- secret_id(**Required**): Tencent cloud secret id. Should be referred to a encrypted environment variable
-- secret_key(**Required**): Tencent cloud secret key. Should be referred to a encrypted environment variable
+- secret_id(**Required**): Tencent Cloud secret id. Should be referred to a encrypted environment variable
+- secret_key(**Required**): Tencent Cloud secret key. Should be referred to a encrypted environment variable
+- session_token: Tencent Cloud session token for temporary secret, may get from other actions
 - cos_bucket(**Required**): COS bucket name
 - cos_region(**Required**): COS bucket region
 - cos_accelerate: Set to `true` for using accelerate domain to upload files (this input is not independent of the CDN). Default is false
-- cdn_prefix: CDN url prefix if you are using Tencent cloud CDN. If is empty, this action will not flush CDN cache.
+- put_options: The options that will be passed to `putObject` as is, in JSON format. For available parameters, please refer to [official documentation](https://cloud.tencent.com/document/product/436/64980)
+- cdn_type: CDN type, you can choose regular CDN (`cdn`) or EdgeOne CDN (`eo`). Default is `cdn`
+- cdn_prefix: CDN url prefix if you are using Tencent Cloud CDN or Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
+- eo_zone: The Zone ID if you are using Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
 - local_path(**Required**): Local path to be uploaded to COS. Directory or file is allowed
 - remote_path(**Required**): COS path to put the local files in on COS
 - clean: Set to `true` for cleaning files on COS path which are not existed in local path. Default is false
@@ -20,10 +24,14 @@ This action can upload files to tencent cloud COS, and flush CDN cache.
 
 - secret_id(**必填**): 腾讯云 secret id，请使用加密环境变量
 - secret_key(**必填**): 腾讯云 secret key，请使用加密环境变量
+- session_token: 腾讯云临时密钥的 session token，可通过其他 actions 获取后传入
 - cos_bucket(**必填**): COS 存储桶名称
 - cos_region(**必填**): COS 存储桶区域
 - cos_accelerate: 设为`true`以使用加速域名进行上传（此选项与 CDN 无关）。默认为`false`
-- cdn_prefix: 若你使用腾讯云 CDN，此处填写 CDN 的 URL 前缀。若为空，则不刷新 CDN 缓存
+- put_options: 将会原样传给`putObject`的选项，JSON格式，可用参数请参考[官方文档](https://cloud.tencent.com/document/product/436/64980)
+- cdn_type: CDN 类型，可选普通CDN（`cdn`）或 EdgeOne CDN（`eo`），默认为`cdn`
+- cdn_prefix: 若你使用腾讯云 CDN 或 EdgeOne，此处填写 CDN 的 URL 前缀。若为空，则不刷新 CDN 缓存
+- eo_zone: 若你使用腾讯云 EdgeOne，此处填写 EdgeOne 的 Zone ID。若为空，则不刷新 CDN 缓存
 - local_path(**必填**): 将要上传到 COS 的本地路径。可为文件夹或单个文件
 - remote_path(**必填**): 将文件上传到 COS 的指定路径
 - clean: 设为`true`将会清除 COS 上不存在于本地的文件。默认为 false
@@ -36,10 +44,14 @@ This action can upload files to tencent cloud COS, and flush CDN cache.
   with:
     secret_id: YOUR_SECRET_ID
     secret_key: YOUR_SECRET_KEY
+    session_token: YOUR_TOKEN
     cos_bucket: bucket-12345678
     cos_region: ap-shanghai
     cos_accelerate: false
+    put_options: {"StorageClass":"MAZ_STANDARD"}
+    cdn_type: eo
     cdn_prefix: https://cdn.example.com/scripts/
+    eo_zone: zone-123456789
     local_path: path/to/files
     remote_path: /scripts
     clean: false

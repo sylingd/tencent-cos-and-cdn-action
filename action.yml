@@ -10,6 +10,9 @@ inputs:
   secret_key:
     description: 'Tencent cloud secret key. Should be referred to a encrypted environment variable'
     required: true
+  session_token:
+    description: 'Tencent cloud sessionToken for temporary secret, may get from other actions'
+    required: false
   cos_bucket:
     description: 'COS bucket name'
     required: true
@@ -19,8 +22,17 @@ inputs:
   cos_accelerate:
     description: 'Set to true for using accelerate domain to upload files. Default is false'
     required: false
+  put_options:
+    description: 'Other options for putObject operator'
+    required: false
+  cdn_type:
+    description: 'CDN type, cdn or eo. Default is cdn'
+    required: false
   cdn_prefix:
-    description: 'CDN url prefix if you are using Tencent cloud CDN. Default is empty'
+    description: 'CDN url prefix if you are using Tencent Cloud CDN. Default is empty'
+    required: false
+  eo_zone:
+    description: 'EO zone ID if you are using Tencent Cloud EdgeOne CDN. Default is empty'
     required: false
   local_path:
     description: 'Local path to be uploaded to COS. Directory or file is allowed'

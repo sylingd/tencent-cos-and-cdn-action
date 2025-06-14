@@ -7,7 +7,9 @@ class COS {
     return [
       "secret_id",
       "secret_key",
+      "session_token",
       "cos_accelerate",
+      "put_options",
       "cos_bucket",
       "cos_region",
       "local_path",
@@ -16,30 +18,45 @@ class COS {
     ];
   }
 
+  putOptions = {};
+
   constructor(inputs) {
-    this.cos = new COS_SDK({
+    const opt = {
       SecretId: inputs.secret_id,
       SecretKey: inputs.secret_key,
       Domain:
         inputs.cos_accelerate === "true"
           ? "{Bucket}.cos.accelerate.myqcloud.com"
           : undefined,
-    });
+    };
+    if (inputs.session_token) {
+      opt.SecurityToken = inputs.session_token;
+    }
+    this.cos = new COS_SDK(opt);
     this.bucket = inputs.cos_bucket;
     this.region = inputs.cos_region;
     this.localPath = inputs.local_path;
     this.remotePath = inputs.remote_path;
     this.clean = inputs.clean === "true";
+    try {
+      const res = JSON.parse(inputs.put_options);
+      if (typeof res === 'object') {
+        this.putOptions = res;
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 
   uploadFile(p) {
     return new Promise((resolve, reject) => {
       this.cos.putObject(
         {
+          StorageClass: "STANDARD",
+          ...this.putOptions,
           Bucket: this.bucket,
           Region: this.region,
           Key: path.join(this.remotePath, p),
-          StorageClass: "STANDARD",
           Body: fs.createReadStream(path.join(this.localPath, p)),
         },
         function (err, data) {
