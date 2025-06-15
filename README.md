@@ -29,8 +29,8 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - cos_bucket(**Required**): COS bucket name
 - cos_region(**Required**): COS bucket region
 - cos_accelerate: Set to `true` for using accelerate domain to upload files (this input is not independent of the CDN). Default is false
-- cos_init_options: The options that will be passed to `new COS` as is, in JSON format.[official documentation](https://cloud.tencent.com/document/product/436/8629)
-- cos_put_options: The options that will be passed to `putObject` as is, in JSON format. [official documentation](https://cloud.tencent.com/document/product/436/64980)
+- cos_init_options: The options that will be passed to `new COS` as is, in JSON format.[official documentation](https://www.tencentcloud.com/document/product/436/8629)
+- cos_put_options: The options that will be passed to `putObject` as is, in JSON format. [official documentation](https://www.tencentcloud.com/document/product/436/43871)
 - cdn_type: CDN type, you can choose regular CDN (`cdn`) or EdgeOne CDN (`eo`). Default is `cdn`
 - cdn_prefix: CDN url prefix if you are using Tencent Cloud CDN or Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
 - eo_zone: The Zone ID if you are using Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
@@ -79,7 +79,7 @@ For more examples, please refer to the [test branch](https://github.com/sylingd/
 
 ## 使用临时密钥 Using temporary key
 
-当使用临时密钥时，需要授权**所有**你要用到的功能权限：
+当[使用临时密钥](https://cloud.tencent.com/document/product/1312/48195)时，需要授权**所有**你要用到的功能权限：
 
 | 功能 | 权限 |
 | --- | --- |
@@ -88,7 +88,7 @@ For more examples, please refer to the [test branch](https://github.com/sylingd/
 | EdgeOne CDN | `teo:CreatePurgeTask` |
 | 分块上传（有大文件的时候需要） | `cos:InitiateMultipartUpload` `cos:ListMultipartUploads` `cos:ListParts` `cos:UploadPart` `cos:CompleteMultipartUpload` |
 
-When using a temporary key, you need to authorize **all** the function permissions you want to use:
+When [using a temporary key](https://www.tencentcloud.com/document/product/1150/49452), you need to authorize **all** the function permissions you want to use:
 
 | Function | Permission |
 | --- | --- |
