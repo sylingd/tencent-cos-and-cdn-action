@@ -131,8 +131,8 @@ cos_put_options: '{"SliceSize":1048576,"AsyncLimit":3}'
 | 功能 | 权限 |
 | --- | --- |
 | 基础功能 | `cos:PutObject` `cos:DeleteObject` `cos:GetBucket` `cos:HeadObject` |
-| 普通 CDN | `cdn:PurgePathCache` `cdn:PurgeUrlsCache` |
-| EdgeOne CDN | `teo:CreatePurgeTask` |
+| 普通 CDN | `cdn:PurgePathCache` `cdn:PurgeUrlsCache` `cdn:DescribePurgeTasks` |
+| EdgeOne CDN | `teo:CreatePurgeTask` `teo:DescribePurgeTasks` |
 | 分块上传（有大文件的时候需要） | `cos:InitiateMultipartUpload` `cos:ListMultipartUploads` `cos:ListParts` `cos:UploadPart` `cos:CompleteMultipartUpload` |
 
 When [using a temporary key](https://www.tencentcloud.com/document/product/1150/49452), you need to authorize **all** the function permissions you want to use:
@@ -140,6 +140,6 @@ When [using a temporary key](https://www.tencentcloud.com/document/product/1150/
 | Function | Permission |
 | --- | --- |
 | Basic functions | `cos:PutObject` `cos:DeleteObject` `cos:GetBucket` `cos:HeadObject` |
-| Normal CDN | `cdn:PurgePathCache` `cdn:PurgeUrlsCache` |
-| EdgeOne CDN | `teo:CreatePurgeTask` |
+| Normal CDN | `cdn:PurgePathCache` `cdn:PurgeUrlsCache` `cdn:DescribePurgeTasks` |
+| EdgeOne CDN | `teo:CreatePurgeTask` `teo:DescribePurgeTasks` |
 | Multi-part upload (required for large files) | `cos:InitiateMultipartUpload` `cos:ListMultipartUploads` `cos:ListParts` `cos:UploadPart` `cos:CompleteMultipartUpload` |
