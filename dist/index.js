@@ -92587,7 +92587,7 @@ class COS {
       } else {
         // check file size is match
         const fileInfo = await fs.stat(localPath);
-        core.debug(`[cos] [checkFileAndUpload] ${p} size is: [local]${fileInfo.size} [remote]${this.remoteFiles[p].Size}`);
+        core.debug(`[cos] [checkFileAndUpload] ${p} size is: local ${fileInfo.size} remote ${this.remoteFiles[p].Size}`);
         if (String(fileInfo.size) !== String(this.remoteFiles[p].Size)) {
           return doUpload();
         }
@@ -92610,7 +92610,7 @@ class COS {
     if (this.replace === 'crc64ecma') {
       const exist = info.headers['x-cos-hash-crc64ecma'];
       const cur = await hashFile(localPath);
-      core.debug(`[cos] [checkFileAndUpload] ${p} crc64ecma is: [local]${cur} [remote]${exist}`);
+      core.debug(`[cos] [checkFileAndUpload] ${p} crc64ecma is: local ${cur} remote ${exist}`);
       if (exist === cur) {
         return FILE_EXISTS;
       } else {
