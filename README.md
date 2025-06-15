@@ -23,7 +23,7 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - remote_path(**必填**): 将文件上传到 COS 的指定路径
 - clean: 设为`true`将会清除 COS 上不存在于本地的文件。默认为 false
 
-> 如果`cos_replace_file`不为`true`，会增加一次请求，腾讯云可能会收取相应费用。建议每次文件变更较少时开启。
+> 如果`cos_replace_file`不为`true`，会增加一次请求，腾讯云可能会收取相应费用。但开启后同名文件不会重复上传，可减少上行流量。建议每次文件变更较少时开启。
 
 ## Inputs
 
@@ -44,7 +44,7 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - remote_path(**Required**): COS path to put the local files in on COS
 - clean: Set to `true` for cleaning files on COS path which are not existed in local path. Default is false
 
-> If `cos_replace_file` is not `true`, an additional request will be made and Tencent Cloud may charge a corresponding fee. It is recommended to enable it when the file changes are small.
+> If `cos_replace_file` is not `true`, an additional request will be made and Tencent Cloud may charge a corresponding fee. However, after it is enabled, files with the same name will not be uploaded repeatedly, which can reduce upstream traffic. It is recommended to enable it when there are few file changes each time.
 
 ## Demo
 
