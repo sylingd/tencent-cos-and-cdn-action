@@ -25,7 +25,7 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 
 - secret_id(**Required**): Tencent Cloud secret id. Should be referred to a encrypted environment variable
 - secret_key(**Required**): Tencent Cloud secret key. Should be referred to a encrypted environment variable
-- session_token: Tencent Cloud session token for temporary secret, may get from other actions
+- session_token: Tencent Cloud session token for temporary key, may get from other actions
 - cos_bucket(**Required**): COS bucket name
 - cos_region(**Required**): COS bucket region
 - cos_accelerate: Set to `true` for using accelerate domain to upload files (this input is not independent of the CDN). Default is false
@@ -76,3 +76,23 @@ The following command will upload the file `upload_folder/a.js` to `bucket-12345
 更多示例可参考[test分支](https://github.com/sylingd/tencent-cos-and-cdn-action/tree/test)
 
 For more examples, please refer to the [test branch](https://github.com/sylingd/tencent-cos-and-cdn-action/tree/test)
+
+## 使用临时密钥 Using temporary key
+
+当使用临时密钥时，需要授权**所有**你要用到的功能权限：
+
+| 功能 | 权限 |
+| --- | --- |
+| 基础功能 | `cos:PutObject` `cos:DeleteObject` `cos:GetBucket` |
+| 普通 CDN | `cdn:PurgePathCache` `cdn:PurgeUrlsCache` |
+| EdgeOne CDN | `teo:CreatePurgeTask` |
+| 分块上传（有大文件的时候需要） | `cos:InitiateMultipartUpload` `cos:ListMultipartUploads` `cos:ListParts` `cos:UploadPart` `cos:CompleteMultipartUpload` |
+
+When using a temporary key, you need to authorize **all** the function permissions you want to use:
+
+| Function | Permission |
+| --- | --- |
+| Basic functions | `cos:PutObject` `cos:DeleteObject` `cos:GetBucket` |
+| Normal CDN | `cdn:PurgePathCache` `cdn:PurgeUrlsCache` |
+| EdgeOne CDN | `teo:CreatePurgeTask` |
+| Multi-part upload (required for large files) | `cos:InitiateMultipartUpload` `cos:ListMultipartUploads` `cos:ListParts` `cos:UploadPart` `cos:CompleteMultipartUpload` |
