@@ -140,10 +140,8 @@ class CDN {
       taskId = await this.purgeAll();
     } else {
       // 清空部分缓存
-      console.log(`[cdn] flush ${changedFiles.size} CDN caches`);
-      taskId = await this.purgeUrls(
-        Array.from(changedFiles).map((it) => this.createUrl(it))
-      );
+      console.log(`[cdn] flush ${changedFiles.length} CDN caches`);
+      taskId = await this.purgeUrls(changedFiles.map((it) => this.createUrl(it)));
     }
     console.log(`[cdn] task id: ${taskId}`);
     if (taskId && this.waitFlush) {

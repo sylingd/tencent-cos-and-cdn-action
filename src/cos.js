@@ -287,7 +287,7 @@ class COS {
     if (cleanedFilesCount > 0) {
       cleanedFilesMessage = `, cleaned ${cleanedFilesCount} files`;
     }
-    console.log(`[cos] uploaded ${changedFiles.size} files${cleanedFilesMessage}`);
+    console.log(`[cos] uploaded ${changedFiles.length} files${cleanedFilesMessage}`);
     return changedFiles;
   }
 }
