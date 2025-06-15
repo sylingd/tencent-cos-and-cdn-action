@@ -92269,6 +92269,7 @@ module.exports.implForWrapper = function (wrapper) {
 /***/ 14308:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+const core = __nccwpck_require__(59999);
 const CDN_SDK = __nccwpck_require__(55404);
 const EO_SDK = __nccwpck_require__(43371);
 const path = __nccwpck_require__(16928);
@@ -92333,7 +92334,7 @@ class CDN {
   }
 
   createUrl(file = "") {
-    return this.cdnPrefix + normalizeObjectKey(path.join(this.remotePath, file));
+    return this.cdnPrefix + normalizeObjectKey(this.remotePath + '/' + file);
   }
 
   async purgeAll() {
@@ -92378,6 +92379,7 @@ class CDN {
         ]
       });
       const task = res.Tasks[0];
+      core.debug(`[cdn] [${this.type}] [isTaskFinished] status: ${task.Status}`);
       return task.Status !== 'processing';
     }
     // CDN
@@ -92385,6 +92387,7 @@ class CDN {
       TaskId: taskId
     });
     const task = res.PurgeLogs[0];
+    core.debug(`[cdn] [${this.type}] [isTaskFinished] status: ${task.Status}`);
     return task.Status !== 'process';
   }
 
@@ -92434,6 +92437,7 @@ module.exports = CDN;
 /***/ 38204:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+const core = __nccwpck_require__(59999);
 const COS_SDK = __nccwpck_require__(24805);
 const fs = __nccwpck_require__(91943);
 const path = __nccwpck_require__(16928);
@@ -92510,10 +92514,10 @@ class COS {
     this.clean = inputs.clean === "true";
     if (inputs.cos_put_options) {
       try {
-          const res = JSON.parse(inputs.cos_put_options);
-          if (typeof res === 'object') {
-            this.putOptions = res;
-          }
+        const res = JSON.parse(inputs.cos_put_options);
+        if (typeof res === 'object') {
+          this.putOptions = res;
+        }
       } catch (e) {
         console.log('[cos] Parse put options failed:', e.message, inputs.cos_put_options);
         // ignore
@@ -92564,11 +92568,12 @@ class COS {
   }
 
   async checkFileAndUpload(p) {
-    const fileKey = normalizeObjectKey(path.join(this.remotePath, p));
+    const fileKey = normalizeObjectKey(this.remotePath + '/' + p);
     const localPath = path.join(this.localPath, p);
 
     const doUpload = () => this.uploadFile(fileKey, localPath);
 
+    core.debug(`[cos] [checkFileAndUpload] ${p} key: ${fileKey}`);
     // do not check
     if (this.replace === 'true') {
       return doUpload();
@@ -92577,10 +92582,12 @@ class COS {
     if (typeof this.remoteFiles !== 'undefined') {
       if (typeof this.remoteFiles[p] === 'undefined') {
         // new file, skip head operator
+        core.debug(`[cos] [checkFileAndUpload] ${p} is new file`);
         return doUpload();
       } else {
         // check file size is match
         const fileInfo = await fs.stat(localPath);
+        core.debug(`[cos] [checkFileAndUpload] ${p} size is: ${fileInfo.size} vs ${this.remoteFiles[p].Size}`);
         if (fileInfo.size !== this.remoteFiles[p].Size) {
           return doUpload();
         }
@@ -92591,6 +92598,7 @@ class COS {
       info = await this.headObject(fileKey);
     } catch (e) {
       if (e.code === '404') {
+        core.debug(`[cos] [checkFileAndUpload] ${p} head return 404`);
         // file not exists, continue upload
         return doUpload();
       } else {
@@ -92602,6 +92610,7 @@ class COS {
     if (this.replace === 'crc64ecma') {
       const exist = info.headers['x-cos-hash-crc64ecma'];
       const cur = await hashFile(localPath);
+      core.debug(`[cos] [checkFileAndUpload] ${p} crc64ecma is: ${cur} vs ${exist}`);
       if (exist === cur) {
         return FILE_EXISTS;
       } else {
@@ -92618,7 +92627,7 @@ class COS {
         {
           Bucket: this.bucket,
           Region: this.region,
-          Key: normalizeObjectKey(path.join(this.remotePath, p)),
+          Key: normalizeObjectKey(this.remotePath + '/' + p),
         },
         function (err, data) {
           if (err) {
@@ -92695,6 +92704,10 @@ class COS {
       nextMarker = data.NextMarker;
     } while (data.IsTruncated === "true");
 
+    if (core.isDebug()) {
+      core.debug(`[cos] [collectRemoteFiles] keys: ${Object.keys(this.remoteFiles).join(',')}`);
+    }
+
     return this.remoteFiles;
   }
 
@@ -92720,7 +92733,7 @@ class COS {
       await this.deleteFile(file);
       index++;
       percent = parseInt((index / size) * 100);
-      const displayPath = normalizeObjectKey(path.join(this.remotePath, file));
+      const displayPath = normalizeObjectKey(this.remotePath + '/' + file);
       console.log(`>> [${index}/${size}, ${percent}%] cleaned ${displayPath}`);
     }
   }
@@ -92794,8 +92807,8 @@ async function collectLocalFiles(root) {
 }
 
 function normalizeObjectKey(path) {
-  let p = path;
-  while (p[0] === "/") {
+  let p = path.replace(/[\\\/]+/g, '/');
+  if (p[0] === "/") {
     p = p.substr(1);
   }
   return p;
