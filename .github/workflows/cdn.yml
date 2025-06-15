@@ -35,7 +35,7 @@ jobs:
           cos_bucket: deploy-1251717201
           cos_region: ap-chengdu
           cos_accelerate: false
-          cos_put_options: {"CacheControl":"max-age=43220"}
+          cos_put_options: '{"CacheControl":"max-age=43220"}'
           cdn_type: cdn
           cdn_prefix: https://cdn.sylibs.com/demo/
           local_path: $GITHUB_WORKSPACE/upload_folder
