@@ -40,10 +40,14 @@ class COS {
     }
     if (inputs.session_token) {
       opt.getAuthorization = (options, callback) => {
+        const time = Math.floor(Date.now() / 1000);
         callback({
           TmpSecretId: inputs.secret_id,
           TmpSecretKey: inputs.secret_key,
           SecurityToken: inputs.session_token,
+          StartTime: time,
+          // Simulation expiration time
+          ExpiredTime: time + 24 * 3600,
         });
       };
     } else {
