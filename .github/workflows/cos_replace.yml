@@ -1,4 +1,4 @@
-name: CDN Test
+name: COS Replace Test
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
       - name: Fetch Token
         id: fetch-token
         run: |
-          JSON_RESPONSE=$(curl -X GET -s -H "Authorization: Bearer $TOKEN" --globoff "https://api.sylingd.com/tencent-cloud/GetFederationToken?region=ap-beijing&name=github-bot&policy={%22version%22%3A%222.0%22%2C%22statement%22%3A[{%22effect%22%3A%22allow%22%2C%22action%22%3A[%22cos%3APutObject%22%2C%22cos%3ADeleteObject%22%2C%22cos%3AGetBucket%22]%2C%22resource%22%3A[%22qcs%3A%3Acos%3Aap-chengdu%3Auid%2F1251717201%3Adeploy-1251717201%2F*%22]}%2C{%22effect%22%3A%22allow%22%2C%22action%22%3A[%22cdn%3APurgePathCache%22%2C%22cdn%3APurgeUrlsCache%22]%2C%22resource%22%3A[%22*%22]}]}&duration=600")
+          JSON_RESPONSE=$(curl -X GET -s -H "Authorization: Bearer $TOKEN" --globoff "https://api.sylingd.com/tencent-cloud/GetFederationToken?region=ap-beijing&name=github-bot&policy={%22version%22%3A%222.0%22%2C%22statement%22%3A[{%22effect%22%3A%22allow%22%2C%22action%22%3A[%22cos%3APutObject%22%2C%22cos%3ADeleteObject%22%2C%22cos%3AGetBucket%22]%2C%22resource%22%3A[%22qcs%3A%3Acos%3Aap-chengdu%3Auid%2F1251717201%3Adeploy-1251717201%2F*%22]}]}&duration=600")
           
           TMP_SECRET_ID=$(echo $JSON_RESPONSE | jq -r .Credentials.TmpSecretId)
           TMP_SECRET_KEY=$(echo $JSON_RESPONSE | jq -r .Credentials.TmpSecretKey)
@@ -32,6 +32,9 @@ jobs:
           echo "TMP_TOKEN=$TMP_TOKEN" >> $GITHUB_OUTPUT
         env:
           TOKEN: ${{ secrets.TENCENT_CLOUD_TOKEN }}
+      
+      - name: Genetare files
+        run: date > $GITHUB_WORKSPACE/upload_folder/date.txt
       - name: Test Action
         uses: sylingd/tencent-cos-and-cdn-action@dev
         with:
@@ -40,10 +43,7 @@ jobs:
           session_token: ${{ steps.fetch-token.outputs.TMP_TOKEN }}
           cos_bucket: deploy-1251717201
           cos_region: ap-chengdu
-          cos_put_options: '{"CacheControl":"max-age=43220"}'
-          cdn_type: cdn
-          cdn_prefix: https://cdn.sylibs.com/demo/
-          cdn_wait_flush: true
+          cos_replace: crc64ecma
           local_path: ${{ github.workspace }}/upload_folder
-          remote_path: /demo/actions/cdn
+          remote_path: /demo/actions/cdn-replace
           clean: false

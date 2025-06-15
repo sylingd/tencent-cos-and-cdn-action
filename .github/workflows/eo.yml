@@ -40,10 +40,10 @@ jobs:
           session_token: ${{ steps.fetch-token.outputs.TMP_TOKEN }}
           cos_bucket: deploy-1251717201
           cos_region: ap-chengdu
-          cos_accelerate: false
           cos_put_options: '{"CacheControl":"max-age=43210"}'
           cdn_type: eo
           cdn_prefix: https://www.sylingd.com/eo-demo/
+          cdn_wait_flush: true
           eo_zone: zone-3bx8b92y4m8y
           local_path: ${{ github.workspace }}/upload_folder
           remote_path: /demo/actions/eo
