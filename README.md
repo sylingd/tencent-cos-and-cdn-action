@@ -12,7 +12,8 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - cos_bucket(**Required**): COS bucket name
 - cos_region(**Required**): COS bucket region
 - cos_accelerate: Set to `true` for using accelerate domain to upload files (this input is not independent of the CDN). Default is false
-- put_options: The options that will be passed to `putObject` as is, in JSON format. For available parameters, please refer to [official documentation](https://cloud.tencent.com/document/product/436/64980)
+- cos_init_options: The options that will be passed to `new COS` as is, in JSON format.[official documentation](https://cloud.tencent.com/document/product/436/8629)
+- cos_put_options: The options that will be passed to `putObject` as is, in JSON format. [official documentation](https://cloud.tencent.com/document/product/436/64980)
 - cdn_type: CDN type, you can choose regular CDN (`cdn`) or EdgeOne CDN (`eo`). Default is `cdn`
 - cdn_prefix: CDN url prefix if you are using Tencent Cloud CDN or Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
 - eo_zone: The Zone ID if you are using Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
@@ -28,7 +29,8 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - cos_bucket(**必填**): COS 存储桶名称
 - cos_region(**必填**): COS 存储桶区域
 - cos_accelerate: 设为`true`以使用加速域名进行上传（此选项与 CDN 无关）。默认为`false`
-- put_options: 将会原样传给`putObject`的选项，JSON格式，可用参数请参考[官方文档](https://cloud.tencent.com/document/product/436/64980)
+- cos_init_options: 将会原样传给`new COS`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/8629)
+- cos_put_options: 将会原样传给`putObject`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/64980)
 - cdn_type: CDN 类型，可选普通CDN（`cdn`）或 EdgeOne CDN（`eo`），默认为`cdn`
 - cdn_prefix: 若你使用腾讯云 CDN 或 EdgeOne，此处填写 CDN 的 URL 前缀。若为空，则不刷新 CDN 缓存
 - eo_zone: 若你使用腾讯云 EdgeOne，此处填写 EdgeOne 的 Zone ID。若为空，则不刷新 CDN 缓存
@@ -48,7 +50,8 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
     cos_bucket: bucket-12345678
     cos_region: ap-shanghai
     cos_accelerate: false
-    put_options: {"StorageClass":"MAZ_STANDARD"}
+    cos_init_options: {"CopyChunkParallelLimit":10}
+    cos_put_options: {"StorageClass":"MAZ_STANDARD"}
     cdn_type: eo
     cdn_prefix: https://cdn.example.com/scripts/
     eo_zone: zone-123456789

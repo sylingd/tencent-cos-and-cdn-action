@@ -1,12 +1,26 @@
 const CDN_SDK = require("tencentcloud-sdk-nodejs/tencentcloud/services/cdn");
+const EO_SDK = require("tencentcloud-sdk-nodejs/tencentcloud/services/teo");
 const path = require("path");
 
-const Client = CDN_SDK.cdn.v20180606.Client;
+const EO_Client = EO_SDK.teo.v20220901.Client;
+const CDN_Client = CDN_SDK.cdn.v20180606.Client;
 
 class CDN {
   static getInput() {
-    return ["secret_id", "secret_key", "session_token", "remote_path", "cdn_prefix", "clean"];
+    return [
+      "secret_id",
+      "secret_key",
+      "session_token",
+      "remote_path",
+      "cdn_type",
+      "cdn_prefix",
+      "clean",
+      "eo_zone"
+    ];
   }
+
+  type = 'cdn';
+  client;
 
   constructor(inputs) {
     if (!inputs.cdn_prefix) {
@@ -27,13 +41,20 @@ class CDN {
       clientConfig.credential.token = inputs.session_token;
     }
 
-    this.client = new Client(clientConfig);
+    this.type = inputs.cdn_type || 'cdn';
     this.clean = inputs.clean === "true";
     this.cdnPrefix = inputs.cdn_prefix;
     this.remotePath = inputs.remote_path;
 
     if (this.cdnPrefix[this.cdnPrefix.length - 1] !== "/") {
       this.cdnPrefix += "/";
+    }
+
+    if (this.type === 'eo') {
+      this.zoneId = inputs.eo_zone;
+      this.client = new EO_Client(clientConfig);
+    } else {
+      this.client = new CDN_Client(clientConfig);
     }
   }
 
@@ -46,6 +67,13 @@ class CDN {
   }
 
   purgeAll() {
+    if (this.type === 'eo') {
+      return this.client.CreatePurgeTask({
+        ZoneId: this.zoneId,
+        Type: 'purge_prefix',
+        Targets: [this.createUrl()],
+      });
+    }
     return this.client.PurgePathCache({
       FlushType: "delete",
       Paths: [this.createUrl()],
@@ -53,6 +81,13 @@ class CDN {
   }
 
   purgeUrls(urls) {
+    if (this.type === 'eo') {
+      return this.client.CreatePurgeTask({
+        ZoneId: this.zoneId,
+        Type: 'purge_url',
+        Targets: urls,
+      });
+    }
     return this.client.PurgeUrlsCache({
       Urls: urls,
     });

@@ -22,16 +22,35 @@ class COS {
 
   constructor(inputs) {
     const opt = {
-      SecretId: inputs.secret_id,
-      SecretKey: inputs.secret_key,
       Domain:
         inputs.cos_accelerate === "true"
           ? "{Bucket}.cos.accelerate.myqcloud.com"
           : undefined,
     };
-    if (inputs.session_token) {
-      opt.SecurityToken = inputs.session_token;
+    // Read other options
+    try {
+      const res = JSON.parse(inputs.cos_init_options);
+      if (typeof res === 'object') {
+        Object.keys(res).forEach(k => {
+          opt[k] = res[k];
+        });
+      }
+    } catch (e) {
+      // ignore
     }
+    if (inputs.session_token) {
+      opt.getAuthorization = (options, callback) => {
+        callback({
+          TmpSecretId: inputs.secret_id,
+          TmpSecretKey: inputs.secret_key,
+          SecurityToken: inputs.session_token,
+        });
+      };
+    } else {
+      opt.SecretId = inputs.secret_id;
+      opt.SecretKey = inputs.secret_key;
+    }
+
     this.cos = new COS_SDK(opt);
     this.bucket = inputs.cos_bucket;
     this.region = inputs.cos_region;
@@ -39,7 +58,7 @@ class COS {
     this.remotePath = inputs.remote_path;
     this.clean = inputs.clean === "true";
     try {
-      const res = JSON.parse(inputs.put_options);
+      const res = JSON.parse(inputs.cos_put_options);
       if (typeof res === 'object') {
         this.putOptions = res;
       }

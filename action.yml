@@ -22,7 +22,10 @@ inputs:
   cos_accelerate:
     description: 'Set to true for using accelerate domain to upload files. Default is false'
     required: false
-  put_options:
+  cos_init_options:
+    description: 'Other options for init COS SDK instance operator'
+    required: false
+  cos_put_options:
     description: 'Other options for putObject operator'
     required: false
   cdn_type:
@@ -44,5 +47,5 @@ inputs:
     description: 'Set to true for cleaning files on COS path which are not existed in local path. Default is false'
     required: false
 runs:
-  using: 'node16'
+  using: 'node18'
   main: 'dist/index.js'
