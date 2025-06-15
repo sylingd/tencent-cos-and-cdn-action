@@ -92409,7 +92409,6 @@ class CDN {
     if (this.clean || changedFiles.length > 200) {
       console.log('[cdn] flush all CDN cache');
       taskId = await this.purgeAll();
-      return;
     } else {
       // 清空部分缓存
       console.log(`[cdn] flush ${changedFiles.size} CDN caches`);
@@ -92426,7 +92425,7 @@ class CDN {
           console.log('[cdn] flush finished');
           break;
         }
-        await sleep(5000);
+        await sleep(10000);
       }
     }
   }
@@ -92707,7 +92706,7 @@ class COS {
   }
 
   async process(localFiles) {
-    console.log(localFiles.size, "files to be uploaded");
+    console.log(`[cos] ${localFiles.size} files to be uploaded`);
     let changedFiles = localFiles;
     try {
       changedFiles = await this.uploadFiles(localFiles);
@@ -92720,7 +92719,7 @@ class COS {
       const remoteFiles = await this.collectRemoteFiles();
       const deletedFiles = this.findDeletedFiles(localFiles, remoteFiles);
       if (deletedFiles.size > 0) {
-        console.log(`${deletedFiles.size} files to be cleaned`);
+        console.log(`[cos] ${deletedFiles.size} files to be cleaned`);
       }
       await this.cleanDeleteFiles(deletedFiles);
       cleanedFilesCount = deletedFiles.size;
@@ -92729,7 +92728,7 @@ class COS {
     if (cleanedFilesCount > 0) {
       cleanedFilesMessage = `, cleaned ${cleanedFilesCount} files`;
     }
-    console.log(`uploaded ${changedFiles.size} files${cleanedFilesMessage}`);
+    console.log(`[cos] uploaded ${changedFiles.size} files${cleanedFilesMessage}`);
     return changedFiles;
   }
 }

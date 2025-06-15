@@ -138,7 +138,6 @@ class CDN {
     if (this.clean || changedFiles.length > 200) {
       console.log('[cdn] flush all CDN cache');
       taskId = await this.purgeAll();
-      return;
     } else {
       // 清空部分缓存
       console.log(`[cdn] flush ${changedFiles.size} CDN caches`);
@@ -155,7 +154,7 @@ class CDN {
           console.log('[cdn] flush finished');
           break;
         }
-        await sleep(5000);
+        await sleep(10000);
       }
     }
   }
