@@ -95,7 +95,7 @@ class COS {
           Bucket: this.bucket,
           Region: this.region,
           Key: key,
-          Body: fs.createReadStream(file),
+          FilePath: file,
         },
         function (err, data) {
           if (err) {
