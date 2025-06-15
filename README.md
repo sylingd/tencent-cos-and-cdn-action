@@ -30,7 +30,7 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - cos_region(**Required**): COS bucket region
 - cos_accelerate: Set to `true` for using accelerate domain to upload files (this input is not independent of the CDN). Default is false
 - cos_init_options: The options that will be passed to `new COS` as is, in JSON format.[official documentation](https://www.tencentcloud.com/document/product/436/8629)
-- cos_put_options: The options that will be passed to `putObject` as is, in JSON format. [official documentation](https://www.tencentcloud.com/document/product/436/43871)
+- cos_put_options: The options that will be passed to `putObject` as is, in JSON format. [official documentation](https://www.tencentcloud.com/document/product/436/7749)
 - cdn_type: CDN type, you can choose regular CDN (`cdn`) or EdgeOne CDN (`eo`). Default is `cdn`
 - cdn_prefix: CDN url prefix if you are using Tencent Cloud CDN or Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
 - eo_zone: The Zone ID if you are using Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
