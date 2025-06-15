@@ -92646,7 +92646,7 @@ class COS {
         {
           Bucket: this.bucket,
           Region: this.region,
-          Prefix: this.remotePath,
+          Prefix: normalizeObjectKey(this.remotePath),
           NextMarker: nextMarker,
         },
         function (err, data) {

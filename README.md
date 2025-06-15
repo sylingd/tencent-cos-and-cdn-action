@@ -87,7 +87,7 @@ The following command will upload the file `upload_folder/a.js` to `bucket-12345
     cdn_prefix: https://cdn.example.com/demo/
     eo_zone: zone-123456789
     local_path: upload_folder
-    remote_path: /scripts
+    remote_path: scripts
     clean: false
 ```
 
