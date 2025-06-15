@@ -92272,6 +92272,7 @@ module.exports.implForWrapper = function (wrapper) {
 const CDN_SDK = __nccwpck_require__(55404);
 const EO_SDK = __nccwpck_require__(43371);
 const path = __nccwpck_require__(16928);
+const { sleep } = __nccwpck_require__(30066);
 
 const EO_Client = EO_SDK.teo.v20220901.Client;
 const CDN_Client = CDN_SDK.cdn.v20180606.Client;
@@ -92286,7 +92287,8 @@ class CDN {
       "cdn_type",
       "cdn_prefix",
       "clean",
-      "eo_zone"
+      "eo_zone",
+      "cdn_wait_flush"
     ];
   }
 
@@ -92314,6 +92316,7 @@ class CDN {
 
     this.type = inputs.cdn_type || 'cdn';
     this.clean = inputs.clean === "true";
+    this.waitFlush = inputs.cdn_wait_flush === 'true';
     this.cdnPrefix = inputs.cdn_prefix;
     this.remotePath = inputs.remote_path;
 
@@ -92337,47 +92340,95 @@ class CDN {
     return this.cdnPrefix + p;
   }
 
-  purgeAll() {
+  async purgeAll() {
     if (this.type === 'eo') {
-      return this.client.CreatePurgeTask({
+      const { JobId } = this.client.CreatePurgeTask({
         ZoneId: this.zoneId,
         Type: 'purge_prefix',
         Targets: [this.createUrl()],
       });
+      return JobId;
     }
-    return this.client.PurgePathCache({
+    const { TaskId } = await this.client.PurgePathCache({
       FlushType: "delete",
       Paths: [this.createUrl()],
     });
+    return TaskId;
   }
 
-  purgeUrls(urls) {
+  async purgeUrls(urls) {
     if (this.type === 'eo') {
-      return this.client.CreatePurgeTask({
+      const { JobId } = await this.client.CreatePurgeTask({
         ZoneId: this.zoneId,
         Type: 'purge_url',
         Targets: urls,
       });
+      return JobId;
     }
-    return this.client.PurgeUrlsCache({
+    const { TaskId } = await this.client.PurgeUrlsCache({
       Urls: urls,
     });
+    return TaskId;
   }
 
-  async process(localFiles) {
+  async isTaskFinished(taskId) {
+    if (this.type === 'eo') {
+      const res = await this.client.DescribePurgeTasks({
+        Filters: [
+          {
+            Name: "job-id",
+            Values: [taskId]
+          }
+        ]
+      });
+      const task = res['Tasks'][0];
+      return task.Status !== 'processing';
+    }
+    // CDN
+    const res = await this.client.DescribePurgeTasks({
+      TaskId: taskId
+    });
+    const task = res['PurgeLogs'][0];
+    return task.Status !== 'process';
+  }
+
+  async process(changedFiles) {
     if (!this.cdnPrefix) {
+      console.log('[cdn] no prefix, skip flush');
       return;
     }
-    if (this.clean || localFiles.length > 200) {
-      await this.purgeAll();
-      console.log("Flush all CDN cache");
+    if (this.type === 'eo' && !this.zoneId) {
+      console.log('[cdn] no eo_zone, skip flush');
       return;
     }
-    // 清空部分缓存
-    await this.purgeUrls(
-      Array.from(localFiles).map((it) => this.createUrl(it))
-    );
-    console.log(`Flush ${localFiles.size} CDN caches`);
+    if (changedFiles.length === 0) {
+      console.log('[cdn] files not change, skip flush');
+      return;
+    }
+    let taskId = undefined;
+    if (this.clean || changedFiles.length > 200) {
+      console.log('[cdn] flush all CDN cache');
+      taskId = await this.purgeAll();
+      return;
+    } else {
+      // 清空部分缓存
+      console.log(`[cdn] flush ${changedFiles.size} CDN caches`);
+      taskId = await this.purgeUrls(
+        Array.from(changedFiles).map((it) => this.createUrl(it))
+      );
+    }
+    console.log(`[cdn] task id: ${taskId}`);
+    if (taskId && this.waitFlush) {
+      console.log('[cdn] checking task status...');
+      while (true) {
+        const isFinish = await this.isTaskFinished(taskId);
+        if (isFinish) {
+          console.log('[cdn] flush finished');
+          break;
+        }
+        await sleep(5000);
+      }
+    }
   }
 }
 
@@ -92393,6 +92444,8 @@ const COS_SDK = __nccwpck_require__(24805);
 const fs = __nccwpck_require__(79896);
 const path = __nccwpck_require__(16928);
 const { crc64 } = __nccwpck_require__(46201);
+
+const SKIPED = Symbol();
 
 async function hashFile(filePath) {
   const fileBuffer = await fs.promises.readFile(filePath);
@@ -92475,9 +92528,9 @@ class COS {
     }
   }
 
-  putObject(key, file) {
+  uploadFile(key, file) {
     return new Promise((resolve, reject) => {
-      this.cos.putObject(
+      this.cos.uploadFile(
         {
           StorageClass: "STANDARD",
           ...this.putOptions,
@@ -92517,7 +92570,7 @@ class COS {
 
   }
 
-  async uploadFile(p) {
+  async checkFileAndUpload(p) {
     const fileKey = path.join(this.remotePath, p);
     const localPath = path.join(this.localPath, p);
     if (this.replace !== 'true') {
@@ -92527,8 +92580,7 @@ class COS {
           const exist = info.headers['x-cos-hash-crc64ecma'];
           const cur = await hashFile(localPath);
           if (exist === cur) {
-            console.log(`[cos] file ${fileKey} not changed, skip upload`);
-            return;
+            return SKIPED;
           }
         }
       } catch (e) {
@@ -92536,12 +92588,11 @@ class COS {
           // file not exists, continue upload
         } else {
           // head failed, do not upload
-          console.error(`[cos] head object ${fileKey} failed, skip upload`, e);
-          return;
+          return SKIPED;
         }
       }
     }
-    return this.putObject(fileKey);
+    return this.uploadFile(fileKey);
   }
 
   deleteFile(p) {
@@ -92587,17 +92638,25 @@ class COS {
     const size = localFiles.size;
     let index = 0;
     let percent = 0;
+    const changedFiles = [];
     for (const file of localFiles) {
-      await this.uploadFile(file);
       index++;
       percent = parseInt((index / size) * 100);
+      let result = 'uploaded';
+      const res = await this.uploadFile(file);
+      if (res === SKIPED) {
+        result = 'skiped';
+      } else {
+        changedFiles.push(file);
+      }
       console.log(
-        `>> [${index}/${size}, ${percent}%] uploaded ${path.join(
+        `>> [${index}/${size}, ${percent}%] ${result} ${path.join(
           this.localPath,
           file
         )}`
       );
     }
+    return changedFiles;
   }
 
   async collectRemoteFiles() {
@@ -92649,8 +92708,9 @@ class COS {
 
   async process(localFiles) {
     console.log(localFiles.size, "files to be uploaded");
+    let changedFiles = localFiles;
     try {
-      await this.uploadFiles(localFiles);
+      changedFiles = await this.checkFileAndUpload(localFiles);
     } catch (e) {
       console.error('upload failed: ', e);
       process.exit(-1);
@@ -92669,7 +92729,8 @@ class COS {
     if (cleanedFilesCount > 0) {
       cleanedFilesMessage = `, cleaned ${cleanedFilesCount} files`;
     }
-    console.log(`uploaded ${localFiles.size} files${cleanedFilesMessage}`);
+    console.log(`uploaded ${changedFiles.size} files${cleanedFilesMessage}`);
+    return changedFiles;
   }
 }
 
@@ -92710,6 +92771,12 @@ async function collectLocalFiles(root) {
   return files;
 }
 
+function sleep(time) {
+  return new Promise(resolve => {
+    setTimeout(() => resolve(), time);
+  });
+}
+
 function readConfig(fields) {
   // 合并数组项
   const result = {};
@@ -92722,6 +92789,7 @@ function readConfig(fields) {
 }
 
 module.exports = {
+  sleep,
   readConfig,
   collectLocalFiles,
 };
@@ -94768,9 +94836,9 @@ async function main() {
   const cosInstance = new COS(config);
   // 读取所有文件
   const localFiles = await collectLocalFiles(config.local_path);
-  await cosInstance.process(localFiles);
+  const changedFiles = await cosInstance.process(localFiles);
   const cdnInstance = new CDN(config);
-  await cdnInstance.process(localFiles);
+  await cdnInstance.process(changedFiles);
 }
 
 main();

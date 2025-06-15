@@ -86,9 +86,9 @@ class COS {
     }
   }
 
-  putObject(key, file) {
+  uploadFile(key, file) {
     return new Promise((resolve, reject) => {
-      this.cos.putObject(
+      this.cos.uploadFile(
         {
           StorageClass: "STANDARD",
           ...this.putOptions,
@@ -128,7 +128,7 @@ class COS {
 
   }
 
-  async uploadFile(p) {
+  async checkFileAndUpload(p) {
     const fileKey = path.join(this.remotePath, p);
     const localPath = path.join(this.localPath, p);
     if (this.replace !== 'true') {
@@ -150,7 +150,7 @@ class COS {
         }
       }
     }
-    return this.putObject(fileKey);
+    return this.uploadFile(fileKey);
   }
 
   deleteFile(p) {
@@ -268,7 +268,7 @@ class COS {
     console.log(localFiles.size, "files to be uploaded");
     let changedFiles = localFiles;
     try {
-      changedFiles = await this.uploadFiles(localFiles);
+      changedFiles = await this.checkFileAndUpload(localFiles);
     } catch (e) {
       console.error('upload failed: ', e);
       process.exit(-1);

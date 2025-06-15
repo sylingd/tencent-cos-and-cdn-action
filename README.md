@@ -13,7 +13,7 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - cos_region(**必填**): COS 存储桶区域
 - cos_accelerate: 设为`true`以使用加速域名进行上传（此选项与 CDN 无关）。默认为`false`
 - cos_init_options: 将会原样传给`new COS`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/8629)
-- cos_put_options: 将会原样传给`putObject`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/64980)
+- cos_put_options: 将会原样传给`uploadFile`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/64980)
 - cos_replace_file: 是否替换已经存在的文件，可选：`true`替换、`false`不替换、`crc64ecma`通过crc64ecma对比，替换有变更的文件。默认为`true`
 - cdn_type: CDN 类型，可选普通CDN（`cdn`）或 EdgeOne CDN（`eo`）。默认为`cdn`
 - cdn_prefix: 若你使用腾讯云 CDN 或 EdgeOne，此处填写 CDN 的 URL 前缀。若为空，则不刷新 CDN 缓存
@@ -33,8 +33,8 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - cos_bucket(**Required**): COS bucket name
 - cos_region(**Required**): COS bucket region
 - cos_accelerate: Set to `true` for using accelerate domain to upload files (this input is not independent of the CDN). Default is false
-- cos_init_options: The options that will be passed to `new COS` as is, in JSON format.[official documentation](https://www.tencentcloud.com/document/product/436/8629)
-- cos_put_options: The options that will be passed to `putObject` as is, in JSON format. [official documentation](https://www.tencentcloud.com/document/product/436/7749)
+- cos_init_options: The options that will be passed to `new COS` as is, in JSON format.[official documentation](https://www.tencentcloud.com/document/product/436/7749)
+- cos_put_options: The options that will be passed to `uploadFile` as is, in JSON format. [official documentation](https://www.tencentcloud.com/document/product/436/43871)
 - cdn_type: CDN type, you can choose regular CDN (`cdn`) or EdgeOne CDN (`eo`). Default is `cdn`
 - cdn_prefix: CDN url prefix if you are using Tencent Cloud CDN or Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
 - cos_replace_file: Whether to replace the existing file, optional: `true` replace, `false` not replace, `crc64ecma` replace the changed file through crc64ecma comparison. Default is `true`
