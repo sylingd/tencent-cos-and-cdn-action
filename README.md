@@ -50,8 +50,8 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
     cos_bucket: bucket-12345678
     cos_region: ap-shanghai
     cos_accelerate: false
-    cos_init_options: {"CopyChunkParallelLimit":10}
-    cos_put_options: {"StorageClass":"MAZ_STANDARD"}
+    cos_init_options: '{"CopyChunkParallelLimit":10}'
+    cos_put_options: '{"StorageClass":"MAZ_STANDARD"}'
     cdn_type: eo
     cdn_prefix: https://cdn.example.com/scripts/
     eo_zone: zone-123456789
