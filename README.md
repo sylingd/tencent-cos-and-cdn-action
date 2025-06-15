@@ -15,14 +15,15 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - cos_init_options: 将会原样传给`new COS`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/8629)
 - cos_put_options: 将会原样传给`putObject`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/64980)
 - cos_replace_file: 是否替换已经存在的文件，可选：`true`替换、`false`不替换、`crc64ecma`通过crc64ecma对比，替换有变更的文件。默认为`true`
-- cdn_type: CDN 类型，可选普通CDN（`cdn`）或 EdgeOne CDN（`eo`），默认为`cdn`
+- cdn_type: CDN 类型，可选普通CDN（`cdn`）或 EdgeOne CDN（`eo`）。默认为`cdn`
 - cdn_prefix: 若你使用腾讯云 CDN 或 EdgeOne，此处填写 CDN 的 URL 前缀。若为空，则不刷新 CDN 缓存
+- cdn_wait_flush: 是否等待 CDN 刷新完成。默认为`false`
 - eo_zone: 若你使用腾讯云 EdgeOne，此处填写 EdgeOne 的 Zone ID。若为空，则不刷新 CDN 缓存
 - local_path(**必填**): 将要上传到 COS 的本地路径。可为文件夹或单个文件
 - remote_path(**必填**): 将文件上传到 COS 的指定路径
 - clean: 设为`true`将会清除 COS 上不存在于本地的文件。默认为 false
 
-> 如果 cos_replace_file 不为 `true`，会增加一次请求，腾讯云可能会收取相应费用。建议每次文件变更较少时开启。
+> 如果`cos_replace_file`不为`true`，会增加一次请求，腾讯云可能会收取相应费用。建议每次文件变更较少时开启。
 
 ## Inputs
 
@@ -37,10 +38,13 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - cdn_type: CDN type, you can choose regular CDN (`cdn`) or EdgeOne CDN (`eo`). Default is `cdn`
 - cdn_prefix: CDN url prefix if you are using Tencent Cloud CDN or Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
 - cos_replace_file: Whether to replace the existing file, optional: `true` replace, `false` not replace, `crc64ecma` replace the changed file through crc64ecma comparison. Default is `true`
+- cdn_wait_flush: Whether to wait for CDN refresh to complete. Defaults is `false`
 - eo_zone: The Zone ID if you are using Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
 - local_path(**Required**): Local path to be uploaded to COS. Directory or file is allowed
 - remote_path(**Required**): COS path to put the local files in on COS
 - clean: Set to `true` for cleaning files on COS path which are not existed in local path. Default is false
+
+> If `cos_replace_file` is not `true`, an additional request will be made and Tencent Cloud may charge a corresponding fee. It is recommended to enable it when the file changes are small.
 
 ## Demo
 
@@ -70,6 +74,7 @@ The following command will upload the file `upload_folder/a.js` to `bucket-12345
     cos_init_options: '{"CopyChunkParallelLimit":10}'
     cos_put_options: '{"StorageClass":"MAZ_STANDARD"}'
     cos_replace_file: true
+    cdn_wait_flush: false
     cdn_type: eo
     cdn_prefix: https://cdn.example.com/demo/
     eo_zone: zone-123456789

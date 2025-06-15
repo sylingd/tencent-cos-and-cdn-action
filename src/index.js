@@ -16,9 +16,9 @@ async function main() {
   const cosInstance = new COS(config);
   // 读取所有文件
   const localFiles = await collectLocalFiles(config.local_path);
-  await cosInstance.process(localFiles);
+  const changedFiles = await cosInstance.process(localFiles);
   const cdnInstance = new CDN(config);
-  await cdnInstance.process(localFiles);
+  await cdnInstance.process(changedFiles);
 }
 
 main();

@@ -1,6 +1,7 @@
 const CDN_SDK = require("tencentcloud-sdk-nodejs/tencentcloud/services/cdn");
 const EO_SDK = require("tencentcloud-sdk-nodejs/tencentcloud/services/teo");
 const path = require("path");
+const { sleep } = require("./utils");
 
 const EO_Client = EO_SDK.teo.v20220901.Client;
 const CDN_Client = CDN_SDK.cdn.v20180606.Client;
@@ -15,7 +16,8 @@ class CDN {
       "cdn_type",
       "cdn_prefix",
       "clean",
-      "eo_zone"
+      "eo_zone",
+      "cdn_wait_flush"
     ];
   }
 
@@ -43,6 +45,7 @@ class CDN {
 
     this.type = inputs.cdn_type || 'cdn';
     this.clean = inputs.clean === "true";
+    this.waitFlush = inputs.cdn_wait_flush === 'true';
     this.cdnPrefix = inputs.cdn_prefix;
     this.remotePath = inputs.remote_path;
 
@@ -66,47 +69,95 @@ class CDN {
     return this.cdnPrefix + p;
   }
 
-  purgeAll() {
+  async purgeAll() {
     if (this.type === 'eo') {
-      return this.client.CreatePurgeTask({
+      const { JobId } = this.client.CreatePurgeTask({
         ZoneId: this.zoneId,
         Type: 'purge_prefix',
         Targets: [this.createUrl()],
       });
+      return JobId;
     }
-    return this.client.PurgePathCache({
+    const { TaskId } = await this.client.PurgePathCache({
       FlushType: "delete",
       Paths: [this.createUrl()],
     });
+    return TaskId;
   }
 
-  purgeUrls(urls) {
+  async purgeUrls(urls) {
     if (this.type === 'eo') {
-      return this.client.CreatePurgeTask({
+      const { JobId } = await this.client.CreatePurgeTask({
         ZoneId: this.zoneId,
         Type: 'purge_url',
         Targets: urls,
       });
+      return JobId;
     }
-    return this.client.PurgeUrlsCache({
+    const { TaskId } = await this.client.PurgeUrlsCache({
       Urls: urls,
     });
+    return TaskId;
   }
 
-  async process(localFiles) {
+  async isTaskFinished(taskId) {
+    if (this.type === 'eo') {
+      const res = await this.client.DescribePurgeTasks({
+        Filters: [
+          {
+            Name: "job-id",
+            Values: [taskId]
+          }
+        ]
+      });
+      const task = res['Tasks'][0];
+      return task.Status !== 'processing';
+    }
+    // CDN
+    const res = await this.client.DescribePurgeTasks({
+      TaskId: taskId
+    });
+    const task = res['PurgeLogs'][0];
+    return task.Status !== 'process';
+  }
+
+  async process(changedFiles) {
     if (!this.cdnPrefix) {
+      console.log('[cdn] no prefix, skip flush');
       return;
     }
-    if (this.clean || localFiles.length > 200) {
-      await this.purgeAll();
-      console.log("Flush all CDN cache");
+    if (this.type === 'eo' && !this.zoneId) {
+      console.log('[cdn] no eo_zone, skip flush');
       return;
     }
-    // 清空部分缓存
-    await this.purgeUrls(
-      Array.from(localFiles).map((it) => this.createUrl(it))
-    );
-    console.log(`Flush ${localFiles.size} CDN caches`);
+    if (changedFiles.length === 0) {
+      console.log('[cdn] files not change, skip flush');
+      return;
+    }
+    let taskId = undefined;
+    if (this.clean || changedFiles.length > 200) {
+      console.log('[cdn] flush all CDN cache');
+      taskId = await this.purgeAll();
+      return;
+    } else {
+      // 清空部分缓存
+      console.log(`[cdn] flush ${changedFiles.size} CDN caches`);
+      taskId = await this.purgeUrls(
+        Array.from(changedFiles).map((it) => this.createUrl(it))
+      );
+    }
+    console.log(`[cdn] task id: ${taskId}`);
+    if (taskId && this.waitFlush) {
+      console.log('[cdn] checking task status...');
+      while (true) {
+        const isFinish = await this.isTaskFinished(taskId);
+        if (isFinish) {
+          console.log('[cdn] flush finished');
+          break;
+        }
+        await sleep(5000);
+      }
+    }
   }
 }
 

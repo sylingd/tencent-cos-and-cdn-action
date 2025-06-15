@@ -27,6 +27,12 @@ async function collectLocalFiles(root) {
   return files;
 }
 
+function sleep(time) {
+  return new Promise(resolve => {
+    setTimeout(() => resolve(), time);
+  });
+}
+
 function readConfig(fields) {
   // 合并数组项
   const result = {};
@@ -39,6 +45,7 @@ function readConfig(fields) {
 }
 
 module.exports = {
+  sleep,
   readConfig,
   collectLocalFiles,
 };

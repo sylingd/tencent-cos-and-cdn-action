@@ -3,6 +3,8 @@ const fs = require("fs");
 const path = require("path");
 const { crc64 } = require("crc64-ecma");
 
+const SKIPED = Symbol();
+
 async function hashFile(filePath) {
   const fileBuffer = await fs.promises.readFile(filePath);
   return crc64(fileBuffer).toString();
@@ -136,8 +138,7 @@ class COS {
           const exist = info.headers['x-cos-hash-crc64ecma'];
           const cur = await hashFile(localPath);
           if (exist === cur) {
-            console.log(`[cos] file ${fileKey} not changed, skip upload`);
-            return;
+            return SKIPED;
           }
         }
       } catch (e) {
@@ -145,8 +146,7 @@ class COS {
           // file not exists, continue upload
         } else {
           // head failed, do not upload
-          console.error(`[cos] head object ${fileKey} failed, skip upload`, e);
-          return;
+          return SKIPED;
         }
       }
     }
@@ -196,17 +196,25 @@ class COS {
     const size = localFiles.size;
     let index = 0;
     let percent = 0;
+    const changedFiles = [];
     for (const file of localFiles) {
-      await this.uploadFile(file);
       index++;
       percent = parseInt((index / size) * 100);
+      let result = 'uploaded';
+      const res = await this.uploadFile(file);
+      if (res === SKIPED) {
+        result = 'skiped';
+      } else {
+        changedFiles.push(file);
+      }
       console.log(
-        `>> [${index}/${size}, ${percent}%] uploaded ${path.join(
+        `>> [${index}/${size}, ${percent}%] ${result} ${path.join(
           this.localPath,
           file
         )}`
       );
     }
+    return changedFiles;
   }
 
   async collectRemoteFiles() {
@@ -258,8 +266,9 @@ class COS {
 
   async process(localFiles) {
     console.log(localFiles.size, "files to be uploaded");
+    let changedFiles = localFiles;
     try {
-      await this.uploadFiles(localFiles);
+      changedFiles = await this.uploadFiles(localFiles);
     } catch (e) {
       console.error('upload failed: ', e);
       process.exit(-1);
@@ -278,7 +287,8 @@ class COS {
     if (cleanedFilesCount > 0) {
       cleanedFilesMessage = `, cleaned ${cleanedFilesCount} files`;
     }
-    console.log(`uploaded ${localFiles.size} files${cleanedFilesMessage}`);
+    console.log(`uploaded ${changedFiles.size} files${cleanedFilesMessage}`);
+    return changedFiles;
   }
 }
 
