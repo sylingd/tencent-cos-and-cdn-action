@@ -9,7 +9,8 @@ class COS {
       "secret_key",
       "session_token",
       "cos_accelerate",
-      "put_options",
+      "cos_init_options",
+      "cos_put_options",
       "cos_bucket",
       "cos_region",
       "local_path",
@@ -61,15 +62,18 @@ class COS {
     this.localPath = inputs.local_path;
     this.remotePath = inputs.remote_path;
     this.clean = inputs.clean === "true";
-    try {
-      const res = JSON.parse(inputs.cos_put_options);
-      if (typeof res === 'object') {
-        this.putOptions = res;
+    if (inputs.cos_put_options) {
+      try {
+          const res = JSON.parse(inputs.cos_put_options);
+          if (typeof res === 'object') {
+            this.putOptions = res;
+          }
+      } catch (e) {
+        console.log('[cos] Parse put options failed:', e.message, inputs.cos_put_options);
+        // ignore
       }
-    } catch (e) {
-      // ignore
+      console.log('[cos] Put options:', this.putOptions)
     }
-    console.log('Put options:', this.putOptions, inputs.cos_put_options)
   }
 
   uploadFile(p) {
