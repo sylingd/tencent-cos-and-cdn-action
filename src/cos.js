@@ -1,12 +1,14 @@
 const COS_SDK = require("cos-nodejs-sdk-v5");
-const fs = require("fs");
+const fs = require("fs/promises");
 const path = require("path");
 const { crc64 } = require("crc64-ecma");
+const { normalizeObjectKey } = require("./utils");
 
-const SKIPED = Symbol();
+const FILE_EXISTS = Symbol();
+const HEAD_FAILED = Symbol();
 
 async function hashFile(filePath) {
-  const fileBuffer = await fs.promises.readFile(filePath);
+  const fileBuffer = await fs.readFile(filePath);
   return crc64(fileBuffer).toString();
 }
 
@@ -29,13 +31,11 @@ class COS {
   }
 
   putOptions = {};
+  remoteFiles = undefined;
 
   constructor(inputs) {
     const opt = {
-      Domain:
-        inputs.cos_accelerate === "true"
-          ? "{Bucket}.cos.accelerate.myqcloud.com"
-          : undefined,
+      UseAccelerate: inputs.cos_accelerate === "true",
     };
     // Read other options
     try {
@@ -69,7 +69,7 @@ class COS {
     this.bucket = inputs.cos_bucket;
     this.region = inputs.cos_region;
     this.localPath = inputs.local_path;
-    this.remotePath = inputs.remote_path;
+    this.remotePath = inputs.remote_path || '';
     this.replace = inputs.cos_replace_file || "true";
     this.clean = inputs.clean === "true";
     if (inputs.cos_put_options) {
@@ -125,32 +125,55 @@ class COS {
         }
       );
     });
-
   }
 
   async checkFileAndUpload(p) {
-    const fileKey = path.join(this.remotePath, p);
+    const fileKey = normalizeObjectKey(path.join(this.remotePath, p));
     const localPath = path.join(this.localPath, p);
-    if (this.replace !== 'true') {
-      try {
-        const info = await this.headObject(fileKey);
-        if (this.replace === 'crc64ecma') {
-          const exist = info.headers['x-cos-hash-crc64ecma'];
-          const cur = await hashFile(localPath);
-          if (exist === cur) {
-            return SKIPED;
-          }
-        }
-      } catch (e) {
-        if (e.code === '404') {
-          // file not exists, continue upload
-        } else {
-          // head failed, do not upload
-          return SKIPED;
+
+    const doUpload = () => this.uploadFile(fileKey, localPath);
+
+    // do not check
+    if (this.replace === 'true') {
+      return doUpload();
+    }
+    // has listed bucket
+    if (typeof this.remoteFiles !== 'undefined') {
+      if (typeof this.remoteFiles[p] === 'undefined') {
+        // new file, skip head operator
+        return doUpload();
+      } else {
+        // check file size is match
+        const fileInfo = await fs.stat(localPath);
+        if (fileInfo.size !== this.remoteFiles[p].Size) {
+          return doUpload();
         }
       }
     }
-    return this.uploadFile(fileKey, localPath);
+    let info = {};
+    try {
+      info = await this.headObject(fileKey);
+    } catch (e) {
+      if (e.code === '404') {
+        // file not exists, continue upload
+        return doUpload();
+      } else {
+        // head failed, do not upload
+        return HEAD_FAILED;
+      }
+    }
+    // check crc64ecma
+    if (this.replace === 'crc64ecma') {
+      const exist = info.headers['x-cos-hash-crc64ecma'];
+      const cur = await hashFile(localPath);
+      if (exist === cur) {
+        return FILE_EXISTS;
+      } else {
+        return doUpload();
+      }
+    }
+    // file exists, do not upload
+    return FILE_EXISTS;
   }
 
   deleteFile(p) {
@@ -159,7 +182,7 @@ class COS {
         {
           Bucket: this.bucket,
           Region: this.region,
-          Key: path.join(this.remotePath, p),
+          Key: normalizeObjectKey(path.join(this.remotePath, p)),
         },
         function (err, data) {
           if (err) {
@@ -202,8 +225,10 @@ class COS {
       percent = parseInt((index / size) * 100);
       let result = 'uploaded';
       const res = await this.checkFileAndUpload(file);
-      if (res === SKIPED) {
-        result = 'skiped';
+      if (res === FILE_EXISTS) {
+        result = 'skiped: file exists';
+      } else if (res === HEAD_FAILED) {
+        result = 'skiped: head failed';
       } else {
         changedFiles.push(file);
       }
@@ -218,27 +243,31 @@ class COS {
   }
 
   async collectRemoteFiles() {
-    const files = new Set();
     let data = {};
     let nextMarker = null;
+
+    if (typeof this.remoteFiles === 'undefined') {
+      this.remoteFiles = {};
+    }
 
     do {
       data = await this.listFiles(nextMarker);
       for (const e of data.Contents) {
-        let p = e.Key.substring(this.remotePath.length);
-        while (p[0]) {
-          p = p.substring(1);
-        }
-        files.add(p);
+        const p = normalizeObjectKey(e.Key.substring(this.remotePath.length));
+        this.remoteFiles[p] = e;
       }
       nextMarker = data.NextMarker;
     } while (data.IsTruncated === "true");
 
-    return files;
+    return this.remoteFiles;
   }
 
-  findDeletedFiles(localFiles, remoteFiles) {
+  findDeletedFiles(localFiles) {
     const deletedFiles = new Set();
+    if (typeof this.remoteFiles === 'undefined') {
+      return deletedFiles;
+    }
+    const remoteFiles = Object.keys(this.remoteFiles);
     for (const file of remoteFiles) {
       if (!localFiles.has(file)) {
         deletedFiles.add(file);
@@ -255,16 +284,16 @@ class COS {
       await this.deleteFile(file);
       index++;
       percent = parseInt((index / size) * 100);
-      console.log(
-        `>> [${index}/${size}, ${percent}%] cleaned ${path.join(
-          cos.remotePath,
-          file
-        )}`
-      );
+      const displayPath = normalizeObjectKey(path.join(this.remotePath, file));
+      console.log(`>> [${index}/${size}, ${percent}%] cleaned ${displayPath}`);
     }
   }
 
   async process(localFiles) {
+    if (this.clean || this.replace !== 'true') {
+      console.log(`[cos] collecting remote files`);
+      this.remoteFiles = await this.collectRemoteFiles();
+    }
     console.log(`[cos] ${localFiles.size} files to be uploaded`);
     let changedFiles = localFiles;
     try {
@@ -275,8 +304,7 @@ class COS {
     }
     let cleanedFilesCount = 0;
     if (this.clean) {
-      const remoteFiles = await this.collectRemoteFiles();
-      const deletedFiles = this.findDeletedFiles(localFiles, remoteFiles);
+      const deletedFiles = this.findDeletedFiles(localFiles);
       if (deletedFiles.size > 0) {
         console.log(`[cos] ${deletedFiles.size} files to be cleaned`);
       }

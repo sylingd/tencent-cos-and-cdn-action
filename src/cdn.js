@@ -1,7 +1,7 @@
 const CDN_SDK = require("tencentcloud-sdk-nodejs/tencentcloud/services/cdn");
 const EO_SDK = require("tencentcloud-sdk-nodejs/tencentcloud/services/teo");
 const path = require("path");
-const { sleep } = require("./utils");
+const { sleep, normalizeObjectKey } = require("./utils");
 
 const EO_Client = EO_SDK.teo.v20220901.Client;
 const CDN_Client = CDN_SDK.cdn.v20180606.Client;
@@ -44,13 +44,13 @@ class CDN {
     }
 
     this.type = inputs.cdn_type || 'cdn';
-    this.clean = inputs.clean === "true";
+    this.clean = inputs.clean === 'true';
     this.waitFlush = inputs.cdn_wait_flush === 'true';
-    this.cdnPrefix = inputs.cdn_prefix;
-    this.remotePath = inputs.remote_path;
+    this.cdnPrefix = inputs.cdn_prefix || '';
+    this.remotePath = inputs.remote_path || '';
 
-    if (this.cdnPrefix[this.cdnPrefix.length - 1] !== "/") {
-      this.cdnPrefix += "/";
+    if (!this.cdnPrefix.endsWith('/')) {
+      this.cdnPrefix += '/';
     }
 
     if (this.type === 'eo') {
@@ -62,11 +62,7 @@ class CDN {
   }
 
   createUrl(file = "") {
-    let p = path.join(this.remotePath, file);
-    if (p[0] === "/") {
-      p = p.substr(1);
-    }
-    return this.cdnPrefix + p;
+    return this.cdnPrefix + normalizeObjectKey(path.join(this.remotePath, file));
   }
 
   async purgeAll() {

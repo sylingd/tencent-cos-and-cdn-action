@@ -27,6 +27,14 @@ async function collectLocalFiles(root) {
   return files;
 }
 
+function normalizeObjectKey(path) {
+  let p = path;
+  while (p[0] === "/") {
+    p = p.substr(1);
+  }
+  return p;
+}
+
 function sleep(time) {
   return new Promise(resolve => {
     setTimeout(() => resolve(), time);
@@ -48,4 +56,5 @@ module.exports = {
   sleep,
   readConfig,
   collectLocalFiles,
+  normalizeObjectKey,
 };

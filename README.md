@@ -14,16 +14,20 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - cos_accelerate: 设为`true`以使用加速域名进行上传（此选项与 CDN 无关）。默认为`false`
 - cos_init_options: 将会原样传给`new COS`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/8629)
 - cos_put_options: 将会原样传给`uploadFile`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/64980)
-- cos_replace_file: 是否替换已经存在的文件，可选：`true`替换、`false`不替换、`crc64ecma`通过crc64ecma对比，替换有变更的文件。默认为`true`
+- cos_replace_file: 是否替换同名文件，默认为`true`
+  - `true` 全部替换（适合每次文件变更非常多的场景）
+  - `false` 全部不替换（适合每次文件变更较少且名称中带有 hash 的场景）
+  - `crc64ecma` 通过crc64ecma对比，替换有变更的文件（适合文件数量较多的场景）
 - cdn_type: CDN 类型，可选普通CDN（`cdn`）或 EdgeOne CDN（`eo`）。默认为`cdn`
 - cdn_prefix: 若你使用腾讯云 CDN 或 EdgeOne，此处填写 CDN 的 URL 前缀。若为空，则不刷新 CDN 缓存
 - cdn_wait_flush: 是否等待 CDN 刷新完成。默认为`false`
 - eo_zone: 若你使用腾讯云 EdgeOne，此处填写 EdgeOne 的 Zone ID。若为空，则不刷新 CDN 缓存
 - local_path(**必填**): 将要上传到 COS 的本地路径。可为文件夹或单个文件
-- remote_path(**必填**): 将文件上传到 COS 的指定路径
-- clean: 设为`true`将会清除 COS 上不存在于本地的文件。默认为 false
+- remote_path: 将文件上传到 COS 的指定路径。默认为`(空字符串)`
+- clean: 设为`true`将会清除 COS 上不存在于本地的文件，会增加少量读请求和相应的删除（写）请求。默认为`false`
+  - 该功能仅会清空`remote_path`下的文件。
 
-> 如果`cos_replace_file`不为`true`，每个文件会增加一次读请求，腾讯云可能会收取相应费用。但开启后同名文件不会重复上传，可减少写请求数。建议每次文件变更较少时开启。
+> 如果`cos_replace_file`不为`true`，或开启`clean`，增加读请求次数为：Bucket 下 Object 数 / 1000次，例如 Bucket 下前缀为`remote_path`的文件有 3100 个，则增加读请求次数 4 次。
 
 ## Inputs
 
@@ -37,14 +41,18 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - cos_put_options: The options that will be passed to `uploadFile` as is, in JSON format. [official documentation](https://www.tencentcloud.com/document/product/436/43871)
 - cdn_type: CDN type, you can choose regular CDN (`cdn`) or EdgeOne CDN (`eo`). Default is `cdn`
 - cdn_prefix: CDN url prefix if you are using Tencent Cloud CDN or Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
-- cos_replace_file: Whether to replace the existing file, optional: `true` replace, `false` not replace, `crc64ecma` replace the changed file through crc64ecma comparison. Default is `true`
-- cdn_wait_flush: Whether to wait for CDN refresh to complete. Defaults is `false`
+- cos_replace_file: Whether to replace files with the same name. Default is `true`
+  - `true` Replace all (suitable for scenarios where a lot of files change each time)
+  - `false` Do not replace all (suitable for scenarios where a few files change each time and the file name contains hash)
+  - `crc64ecma` Replace changed files through crc64ecma comparison (suitable for scenarios with a large number of files)
+- cdn_wait_flush: Whether to wait for CDN refresh to complete. Default is `false`
 - eo_zone: The Zone ID if you are using Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
 - local_path(**Required**): Local path to be uploaded to COS. Directory or file is allowed
-- remote_path(**Required**): COS path to put the local files in on COS
-- clean: Set to `true` for cleaning files on COS path which are not existed in local path. Default is false
+- remote_path: COS path to put the local files in on COS. Default is `(empty string)`
+- clean: Set to `true` for cleaning files on COS path which are not existed in local path. Default is `false`
+  - This function will only clear the files under `remote_path`.
 
-> If `cos_replace_file` is not `true`, a read request will be added for each file, and Tencent Cloud may charge corresponding fees. However, after it is turned on, files with the same name will not be uploaded repeatedly, which can reduce the number of write requests. It is recommended to turn it on when there are few file changes each time.
+> If `cos_replace_file` is not `true`, or `clean` is turned on, the number of read requests is increased by: number of objects in the bucket / 1000 times. For example, if there are 3100 files with the prefix `remote_path` in the bucket, the number of read requests is increased by 4 times.
 
 ## Demo
 

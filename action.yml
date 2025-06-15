@@ -48,7 +48,7 @@ inputs:
     required: true
   remote_path:
     description: 'COS path to put the local files in on COS'
-    required: true
+    required: false
   clean:
     description: 'Set to true for cleaning files on COS path which are not existed in local path. Default is false'
     required: false
