@@ -28,6 +28,9 @@ inputs:
   cos_put_options:
     description: 'Other options for putObject operator'
     required: false
+  cos_replace_file:
+    description: 'Whether to replace the existing file. Default is true'
+    required: false
   cdn_type:
     description: 'CDN type, cdn or eo. Default is cdn'
     required: false

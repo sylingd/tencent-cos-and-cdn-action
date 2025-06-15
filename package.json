@@ -13,6 +13,7 @@
     "@actions/core": "^1.6.0",
     "@actions/github": "^6.0.1",
     "cos-nodejs-sdk-v5": "2.16.0-beta.3",
+    "crc64-ecma": "^2.0.0",
     "tencentcloud-sdk-nodejs": "^4.1.56"
   },
   "devDependencies": {

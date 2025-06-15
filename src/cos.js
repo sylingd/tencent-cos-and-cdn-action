@@ -1,6 +1,12 @@
 const COS_SDK = require("cos-nodejs-sdk-v5");
 const fs = require("fs");
 const path = require("path");
+const { crc64 } = require("crc64-ecma");
+
+async function hashFile(filePath) {
+  const fileBuffer = await fs.promises.readFile(filePath);
+  return crc64(fileBuffer).toString();
+}
 
 class COS {
   static getInput() {
@@ -11,6 +17,7 @@ class COS {
       "cos_accelerate",
       "cos_init_options",
       "cos_put_options",
+      "cos_replace_file",
       "cos_bucket",
       "cos_region",
       "local_path",
@@ -61,6 +68,7 @@ class COS {
     this.region = inputs.cos_region;
     this.localPath = inputs.local_path;
     this.remotePath = inputs.remote_path;
+    this.replace = inputs.cos_replace_file || "true";
     this.clean = inputs.clean === "true";
     if (inputs.cos_put_options) {
       try {
@@ -76,7 +84,7 @@ class COS {
     }
   }
 
-  uploadFile(p) {
+  putObject(key, file) {
     return new Promise((resolve, reject) => {
       this.cos.putObject(
         {
@@ -84,8 +92,8 @@ class COS {
           ...this.putOptions,
           Bucket: this.bucket,
           Region: this.region,
-          Key: path.join(this.remotePath, p),
-          Body: fs.createReadStream(path.join(this.localPath, p)),
+          Key: key,
+          Body: fs.createReadStream(file),
         },
         function (err, data) {
           if (err) {
@@ -96,6 +104,53 @@ class COS {
         }
       );
     });
+  }
+
+  headObject(key) {
+    return new Promise((resolve, reject) => {
+      this.cos.headObject(
+        {
+          Bucket: this.bucket,
+          Region: this.region,
+          Key: key,
+        },
+        function (err, data) {
+          if (err) {
+            return reject(err);
+          } else {
+            return resolve(data);
+          }
+        }
+      );
+    });
+
+  }
+
+  async uploadFile(p) {
+    const fileKey = path.join(this.remotePath, p);
+    const localPath = path.join(this.localPath, p);
+    if (this.replace !== 'true') {
+      try {
+        const info = await this.headObject(fileKey);
+        if (this.replace === 'crc64ecma') {
+          const exist = info.headers['x-cos-hash-crc64ecma'];
+          const cur = await hashFile(localPath);
+          if (exist === cur) {
+            console.log(`[cos] file ${fileKey} not changed, skip upload`);
+            return;
+          }
+        }
+      } catch (e) {
+        if (e.code === '404') {
+          // file not exists, continue upload
+        } else {
+          // head failed, do not upload
+          console.error(`[cos] head object ${fileKey} failed, skip upload`, e);
+          return;
+        }
+      }
+    }
+    return this.putObject(fileKey);
   }
 
   deleteFile(p) {

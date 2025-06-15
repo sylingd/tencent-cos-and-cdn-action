@@ -14,12 +14,15 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - cos_accelerate: 设为`true`以使用加速域名进行上传（此选项与 CDN 无关）。默认为`false`
 - cos_init_options: 将会原样传给`new COS`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/8629)
 - cos_put_options: 将会原样传给`putObject`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/64980)
+- cos_replace_file: 是否替换已经存在的文件，可选：`true`替换、`false`不替换、`crc64ecma`通过crc64ecma对比，替换有变更的文件。默认为`true`
 - cdn_type: CDN 类型，可选普通CDN（`cdn`）或 EdgeOne CDN（`eo`），默认为`cdn`
 - cdn_prefix: 若你使用腾讯云 CDN 或 EdgeOne，此处填写 CDN 的 URL 前缀。若为空，则不刷新 CDN 缓存
 - eo_zone: 若你使用腾讯云 EdgeOne，此处填写 EdgeOne 的 Zone ID。若为空，则不刷新 CDN 缓存
 - local_path(**必填**): 将要上传到 COS 的本地路径。可为文件夹或单个文件
 - remote_path(**必填**): 将文件上传到 COS 的指定路径
 - clean: 设为`true`将会清除 COS 上不存在于本地的文件。默认为 false
+
+> 如果 cos_replace_file 不为 `true`，会增加一次请求，腾讯云可能会收取相应费用。建议每次文件变更较少时开启。
 
 ## Inputs
 
@@ -33,6 +36,7 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - cos_put_options: The options that will be passed to `putObject` as is, in JSON format. [official documentation](https://www.tencentcloud.com/document/product/436/7749)
 - cdn_type: CDN type, you can choose regular CDN (`cdn`) or EdgeOne CDN (`eo`). Default is `cdn`
 - cdn_prefix: CDN url prefix if you are using Tencent Cloud CDN or Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
+- cos_replace_file: Whether to replace the existing file, optional: `true` replace, `false` not replace, `crc64ecma` replace the changed file through crc64ecma comparison. Default is `true`
 - eo_zone: The Zone ID if you are using Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
 - local_path(**Required**): Local path to be uploaded to COS. Directory or file is allowed
 - remote_path(**Required**): COS path to put the local files in on COS
@@ -65,6 +69,7 @@ The following command will upload the file `upload_folder/a.js` to `bucket-12345
     cos_accelerate: false
     cos_init_options: '{"CopyChunkParallelLimit":10}'
     cos_put_options: '{"StorageClass":"MAZ_STANDARD"}'
+    cos_replace_file: true
     cdn_type: eo
     cdn_prefix: https://cdn.example.com/demo/
     eo_zone: zone-123456789
@@ -83,7 +88,7 @@ For more examples, please refer to the [test branch](https://github.com/sylingd/
 
 | 功能 | 权限 |
 | --- | --- |
-| 基础功能 | `cos:PutObject` `cos:DeleteObject` `cos:GetBucket` |
+| 基础功能 | `cos:PutObject` `cos:DeleteObject` `cos:GetBucket` `cos:HeadObject` |
 | 普通 CDN | `cdn:PurgePathCache` `cdn:PurgeUrlsCache` |
 | EdgeOne CDN | `teo:CreatePurgeTask` |
 | 分块上传（有大文件的时候需要） | `cos:InitiateMultipartUpload` `cos:ListMultipartUploads` `cos:ListParts` `cos:UploadPart` `cos:CompleteMultipartUpload` |
@@ -92,7 +97,7 @@ When [using a temporary key](https://www.tencentcloud.com/document/product/1150/
 
 | Function | Permission |
 | --- | --- |
-| Basic functions | `cos:PutObject` `cos:DeleteObject` `cos:GetBucket` |
+| Basic functions | `cos:PutObject` `cos:DeleteObject` `cos:GetBucket` `cos:HeadObject` |
 | Normal CDN | `cdn:PurgePathCache` `cdn:PurgeUrlsCache` |
 | EdgeOne CDN | `teo:CreatePurgeTask` |
 | Multi-part upload (required for large files) | `cos:InitiateMultipartUpload` `cos:ListMultipartUploads` `cos:ListParts` `cos:UploadPart` `cos:CompleteMultipartUpload` |

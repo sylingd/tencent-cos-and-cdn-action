@@ -27111,6 +27111,90 @@ module.exports = Request
 
 /***/ }),
 
+/***/ 46201:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.crc64 = crc64;
+function generateTable() {
+    const POLY = 0xc96c5795d7870f42n;
+    const table = [];
+    for (let i = 0; i < 8; i++) {
+        table[i] = [];
+    }
+    let crc = 0n;
+    for (let i = 0; i < 256; i++) {
+        crc = BigInt(i);
+        for (let j = 0; j < 8; j++) {
+            if (crc & 1n) {
+                crc = POLY ^ (crc >> 1n);
+            }
+            else {
+                crc = crc >> 1n;
+            }
+        }
+        table[0][i] = crc;
+    }
+    for (let i = 0; i < 256; i++) {
+        crc = table[0][i];
+        for (let j = 1; j < 8; j++) {
+            const index = Number(crc & 0xffn);
+            crc = table[0][index] ^ (crc >> 8n);
+            table[j][i] = crc;
+        }
+    }
+    return table;
+}
+function stringToUtf8(string) {
+    return unescape(encodeURIComponent(string));
+}
+function stringToBytes(string) {
+    const bytes = [];
+    for (let index = 0; index < string.length; ++index) {
+        bytes.push(string.charCodeAt(index));
+    }
+    return bytes;
+}
+const TABLE = generateTable();
+function crc64(string) {
+    const utf8String = stringToUtf8(string);
+    let bytes = stringToBytes(utf8String);
+    let crc = ~BigInt(0) & 0xffffffffffffffffn;
+    while (bytes.length > 8) {
+        crc ^=
+            BigInt(bytes[0]) |
+                (BigInt(bytes[1]) << 8n) |
+                (BigInt(bytes[2]) << 16n) |
+                (BigInt(bytes[3]) << 24n) |
+                (BigInt(bytes[4]) << 32n) |
+                (BigInt(bytes[5]) << 40n) |
+                (BigInt(bytes[6]) << 48n) |
+                (BigInt(bytes[7]) << 56n);
+        crc =
+            TABLE[7][Number(crc & 0xffn)] ^
+                TABLE[6][Number((crc >> 8n) & 0xffn)] ^
+                TABLE[5][Number((crc >> 16n) & 0xffn)] ^
+                TABLE[4][Number((crc >> 24n) & 0xffn)] ^
+                TABLE[3][Number((crc >> 32n) & 0xffn)] ^
+                TABLE[2][Number((crc >> 40n) & 0xffn)] ^
+                TABLE[1][Number((crc >> 48n) & 0xffn)] ^
+                TABLE[0][Number(crc >> 56n)];
+        bytes = bytes.slice(8);
+    }
+    for (let i = 0; i < bytes.length; i++) {
+        const lower = Number(crc & 0xffn);
+        const index = lower ^ bytes[i];
+        crc = TABLE[0][index] ^ (crc >> 8n);
+    }
+    crc = ~crc & 0xffffffffffffffffn;
+    return crc;
+}
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
 /***/ 59050:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -92308,6 +92392,12 @@ module.exports = CDN;
 const COS_SDK = __nccwpck_require__(24805);
 const fs = __nccwpck_require__(79896);
 const path = __nccwpck_require__(16928);
+const { crc64 } = __nccwpck_require__(46201);
+
+async function hashFile(filePath) {
+  const fileBuffer = await fs.promises.readFile(filePath);
+  return crc64(fileBuffer).toString();
+}
 
 class COS {
   static getInput() {
@@ -92318,6 +92408,7 @@ class COS {
       "cos_accelerate",
       "cos_init_options",
       "cos_put_options",
+      "cos_replace_file",
       "cos_bucket",
       "cos_region",
       "local_path",
@@ -92368,6 +92459,7 @@ class COS {
     this.region = inputs.cos_region;
     this.localPath = inputs.local_path;
     this.remotePath = inputs.remote_path;
+    this.replace = inputs.cos_replace_file || "true";
     this.clean = inputs.clean === "true";
     if (inputs.cos_put_options) {
       try {
@@ -92383,7 +92475,7 @@ class COS {
     }
   }
 
-  uploadFile(p) {
+  putObject(key, file) {
     return new Promise((resolve, reject) => {
       this.cos.putObject(
         {
@@ -92391,8 +92483,8 @@ class COS {
           ...this.putOptions,
           Bucket: this.bucket,
           Region: this.region,
-          Key: path.join(this.remotePath, p),
-          Body: fs.createReadStream(path.join(this.localPath, p)),
+          Key: key,
+          Body: fs.createReadStream(file),
         },
         function (err, data) {
           if (err) {
@@ -92403,6 +92495,53 @@ class COS {
         }
       );
     });
+  }
+
+  headObject(key) {
+    return new Promise((resolve, reject) => {
+      this.cos.headObject(
+        {
+          Bucket: this.bucket,
+          Region: this.region,
+          Key: key,
+        },
+        function (err, data) {
+          if (err) {
+            return reject(err);
+          } else {
+            return resolve(data);
+          }
+        }
+      );
+    });
+
+  }
+
+  async uploadFile(p) {
+    const fileKey = path.join(this.remotePath, p);
+    const localPath = path.join(this.localPath, p);
+    if (this.replace !== 'true') {
+      try {
+        const info = await this.headObject(fileKey);
+        if (this.replace === 'crc64ecma') {
+          const exist = info.headers['x-cos-hash-crc64ecma'];
+          const cur = await hashFile(localPath);
+          if (exist === cur) {
+            console.log(`[cos] file ${fileKey} not changed, skip upload`);
+            return;
+          }
+        }
+      } catch (e) {
+        if (e.code === '404') {
+          // file not exists, continue upload
+        } else {
+          // head failed, do not upload
+          console.error(`[cos] head object ${fileKey} failed, skip upload`, e);
+          return;
+        }
+      }
+    }
+    return this.putObject(fileKey);
   }
 
   deleteFile(p) {
