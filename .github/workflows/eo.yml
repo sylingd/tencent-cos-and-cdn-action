@@ -17,10 +17,19 @@ jobs:
       - name: Fetch Token
         id: fetch-token
         run: |
-          JSON_RESPONSE=$(curl -X GET -s -H "Authorization: Bearer $TOKEN" --globoff "https://api.sylingd.com/tencent-cloud/GetFederationToken?region=ap-beijing&name=github-bot&policy=%7B%22version%22%3A%222.0%22%2C%22statement%22%3A%5B%7B%22effect%22%3A%22allow%22%2C%22action%22%3A%5B%22cos%3APutObject%22%2C%22cos%3ADeleteObject%22%2C%22cos%3AGetBucket%22%5D%2C%22resource%22%3A%5B%22qcs%3A%3Acos%3Aap-chengdu%3Auid%2F1251717201%3Adeploy-1251717201%2F*%22%5D%7D%2C%7B%22effect%22%3A%22allow%22%2C%22action%22%3A%5B%22teo%3ACreatePurgeTask%22%5D%2C%22resource%22%3A%5B%22qcs%3A%3Ateo%3A%3Auin%2F1251717201%3Azone%2Fzone-3bx8b92y4m8y%22%5D%7D%5D%7D&duration=1800")
-          echo "TMP_SECRET_ID=$(echo $JSON_RESPONSE | jq -r .Credentials.TmpSecretId)" >> $GITHUB_OUTPUT
-          echo "TMP_SECRET_KEY=$(echo $JSON_RESPONSE | jq -r .Credentials.TmpSecretKey)" >> $GITHUB_OUTPUT
-          echo "TMP_TOKEN=$(echo $JSON_RESPONSE | jq -r .Credentials.Token)" >> $GITHUB_OUTPUT
+          JSON_RESPONSE=$(curl -X GET -s -H "Authorization: Bearer $TOKEN" --globoff "https://api.sylingd.com/tencent-cloud/GetFederationToken?region=ap-beijing&name=github-bot&policy=%7B%22version%22%3A%222.0%22%2C%22statement%22%3A%5B%7B%22effect%22%3A%22allow%22%2C%22action%22%3A%5B%22cos%3APutObject%22%2C%22cos%3ADeleteObject%22%2C%22cos%3AGetBucket%22%5D%2C%22resource%22%3A%5B%22qcs%3A%3Acos%3Aap-chengdu%3Auid%2F1251717201%3Adeploy-1251717201%2F*%22%5D%7D%2C%7B%22effect%22%3A%22allow%22%2C%22action%22%3A%5B%22teo%3ACreatePurgeTask%22%5D%2C%22resource%22%3A%5B%22qcs%3A%3Ateo%3A%3Auin%2F1251717201%3Azone%2Fzone-3bx8b92y4m8y%22%5D%7D%5D%7D&duration=600")
+          
+          TMP_SECRET_ID=$(echo $JSON_RESPONSE | jq -r .Credentials.TmpSecretId)
+          TMP_SECRET_KEY=$(echo $JSON_RESPONSE | jq -r .Credentials.TmpSecretKey)
+          TMP_TOKEN=$(echo $JSON_RESPONSE | jq -r .Credentials.Token)
+
+          echo "::add-mask::$TMP_SECRET_ID"
+          echo "::add-mask::$TMP_SECRET_KEY"
+          echo "::add-mask::$TMP_TOKEN"
+          
+          echo "TMP_SECRET_ID=$TMP_SECRET_ID" >> $GITHUB_OUTPUT
+          echo "TMP_SECRET_KEY=$TMP_SECRET_KEY" >> $GITHUB_OUTPUT
+          echo "TMP_TOKEN=$TMP_TOKEN" >> $GITHUB_OUTPUT
         env:
           TOKEN: ${{ secrets.TENCENT_CLOUD_TOKEN }}
       - name: Test Action
