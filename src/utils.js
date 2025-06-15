@@ -1,14 +1,14 @@
 const core = require("@actions/core");
-const fse = require("fs-extra");
+const fs = require("fs/promises");
 const path = require("path");
 
 async function walk(parentPath, walkFn) {
-  stats = await fse.lstat(parentPath);
+  stats = await fs.lstat(parentPath);
   if (!stats.isDirectory()) {
     return await walkFn(parentPath);
   }
 
-  const dir = await fse.opendir(parentPath);
+  const dir = await fs.opendir(parentPath);
   for await (const dirent of dir) {
     await walk(path.join(parentPath, dirent.name), walkFn);
   }
