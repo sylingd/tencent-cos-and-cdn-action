@@ -92501,7 +92501,12 @@ class COS {
 
   async process(localFiles) {
     console.log(localFiles.size, "files to be uploaded");
-    await this.uploadFiles(localFiles);
+    try {
+      await this.uploadFiles(localFiles);
+    } catch (e) {
+      console.error('upload failed: ', e);
+      process.exit(-1);
+    }
     let cleanedFilesCount = 0;
     if (this.clean) {
       const remoteFiles = await this.collectRemoteFiles();
