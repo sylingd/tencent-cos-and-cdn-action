@@ -92381,14 +92381,14 @@ class CDN {
           }
         ]
       });
-      const task = res['Tasks'][0];
+      const task = res.Tasks[0];
       return task.Status !== 'processing';
     }
     // CDN
     const res = await this.client.DescribePurgeTasks({
       TaskId: taskId
     });
-    const task = res['PurgeLogs'][0];
+    const task = res.PurgeLogs[0];
     return task.Status !== 'process';
   }
 
@@ -92419,13 +92419,14 @@ class CDN {
     console.log(`[cdn] task id: ${taskId}`);
     if (taskId && this.waitFlush) {
       console.log('[cdn] checking task status...');
+      await sleep(3000);
       while (true) {
         const isFinish = await this.isTaskFinished(taskId);
         if (isFinish) {
           console.log('[cdn] flush finished');
           break;
         }
-        await sleep(10000);
+        await sleep(8000);
       }
     }
   }
