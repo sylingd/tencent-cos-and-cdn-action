@@ -29,9 +29,9 @@ jobs:
       - name: Test Action
         uses: sylingd/tencent-cos-and-cdn-action@dev
         with:
-          secret_id: $TMP_SECRET_ID
-          secret_key: $TMP_SECRET_KEY
-          session_token: $TMP_TOKEN
+          secret_id: ${{ steps.fetch-token.outputs.TMP_SECRET_ID }}
+          secret_key: ${{ steps.fetch-token.outputs.TMP_SECRET_KEY }}
+          session_token: ${{ steps.fetch-token.outputs.TMP_TOKEN }}
           cos_bucket: deploy-1251717201
           cos_region: ap-chengdu
           cos_accelerate: false
@@ -39,10 +39,6 @@ jobs:
           cdn_type: eo
           cdn_prefix: https://www.sylingd.com/eo-demo/
           eo_zone: zone-3bx8b92y4m8y
-          local_path: $GITHUB_WORKSPACE/upload_folder
+          local_path: ${{ github.workspace }}/upload_folder
           remote_path: /demo/actions/eo
           clean: false
-        env:
-          TMP_SECRET_ID: ${{ steps.fetch-token.outputs.TMP_SECRET_ID }}
-          TMP_SECRET_KEY: ${{ steps.fetch-token.outputs.TMP_SECRET_KEY }}
-          TMP_TOKEN: ${{ steps.fetch-token.outputs.TMP_TOKEN }}
