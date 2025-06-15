@@ -92376,6 +92376,7 @@ class COS {
     } catch (e) {
       // ignore
     }
+    console.log('Put options:', this.putOptions, inputs.cos_put_options)
   }
 
   uploadFile(p) {
