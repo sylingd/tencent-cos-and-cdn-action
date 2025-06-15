@@ -28,8 +28,8 @@ async function collectLocalFiles(root) {
 }
 
 function normalizeObjectKey(path) {
-  let p = path;
-  while (p[0] === "/") {
+  let p = path.replace(/[\\\/]+/g, '/');
+  if (p[0] === "/") {
     p = p.substr(1);
   }
   return p;

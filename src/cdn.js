@@ -1,3 +1,4 @@
+const core = require('@actions/core');
 const CDN_SDK = require("tencentcloud-sdk-nodejs/tencentcloud/services/cdn");
 const EO_SDK = require("tencentcloud-sdk-nodejs/tencentcloud/services/teo");
 const path = require("path");
@@ -62,7 +63,7 @@ class CDN {
   }
 
   createUrl(file = "") {
-    return this.cdnPrefix + normalizeObjectKey(path.join(this.remotePath, file));
+    return this.cdnPrefix + normalizeObjectKey(this.remotePath + '/' + file);
   }
 
   async purgeAll() {
@@ -107,6 +108,7 @@ class CDN {
         ]
       });
       const task = res.Tasks[0];
+      core.debug(`[cdn] [${this.type}] [isTaskFinished] status: ${task.Status}`);
       return task.Status !== 'processing';
     }
     // CDN
@@ -114,6 +116,7 @@ class CDN {
       TaskId: taskId
     });
     const task = res.PurgeLogs[0];
+    core.debug(`[cdn] [${this.type}] [isTaskFinished] status: ${task.Status}`);
     return task.Status !== 'process';
   }
 
