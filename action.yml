@@ -37,6 +37,9 @@ inputs:
   cdn_prefix:
     description: 'CDN url prefix if you are using Tencent Cloud CDN. Default is empty'
     required: false
+  cos_replace_file:
+    description: 'Whether to wait for CDN refresh to complete. Defaults is false'
+    required: false
   eo_zone:
     description: 'EO zone ID if you are using Tencent Cloud EdgeOne CDN. Default is empty'
     required: false
