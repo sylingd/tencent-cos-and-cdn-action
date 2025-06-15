@@ -92592,7 +92592,7 @@ class COS {
         }
       }
     }
-    return this.uploadFile(fileKey);
+    return this.uploadFile(fileKey, localPath);
   }
 
   deleteFile(p) {
