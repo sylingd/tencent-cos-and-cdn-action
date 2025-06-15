@@ -1,4 +1,4 @@
-name: main
+name: CDN Test
 
 on:
   push:
