@@ -92643,7 +92643,7 @@ class COS {
       index++;
       percent = parseInt((index / size) * 100);
       let result = 'uploaded';
-      const res = await this.uploadFile(file);
+      const res = await this.checkFileAndUpload(file);
       if (res === SKIPED) {
         result = 'skiped';
       } else {
@@ -92710,7 +92710,7 @@ class COS {
     console.log(localFiles.size, "files to be uploaded");
     let changedFiles = localFiles;
     try {
-      changedFiles = await this.checkFileAndUpload(localFiles);
+      changedFiles = await this.uploadFiles(localFiles);
     } catch (e) {
       console.error('upload failed: ', e);
       process.exit(-1);
