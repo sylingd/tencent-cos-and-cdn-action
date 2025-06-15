@@ -34,7 +34,12 @@ jobs:
           TOKEN: ${{ secrets.TENCENT_CLOUD_TOKEN }}
       
       - name: Genetare files
-        run: date > $GITHUB_WORKSPACE/upload_folder/date.txt
+        run: |
+          date > $GITHUB_WORKSPACE/upload_folder/date.txt
+
+          length=$(( RANDOM % 32 + 8 ))
+          date +%s%N | md5sum | head -c $length > $GITHUB_WORKSPACE/upload_folder/random.txt
+
       - name: Test Action
         uses: sylingd/tencent-cos-and-cdn-action@dev
         with:
