@@ -87,7 +87,30 @@ The following command will upload the file `upload_folder/a.js` to `bucket-12345
 
 For more examples, please refer to the [test branch](https://github.com/sylingd/tencent-cos-and-cdn-action/tree/test)
 
-## 使用临时密钥 Using temporary key
+## 功能说明
+
+### 文件重复检查 File duplication check
+
+当`cos_replace_file`使用`crc64ecma`时，将会获取服务端计算的 CRC64 值，并与本地文件对比；若相同，则跳过上传。（存在极少数 Hash 碰撞的可能性）
+
+[服务端计算说明](https://cloud.tencent.com/document/product/436/40334)
+
+
+When `cos_replace_file` uses `crc64ecma`, the CRC64 value calculated by the server will be obtained and compared with the local file; if they are the same, the upload will be skipped. (There is a very small possibility of hash collision)
+
+[Server calculation instructions](https://www.tencentcloud.com/document/product/436/34078)
+
+### 分片上传 Multi-part upload
+
+默认情况下，将对大文件（>1m）进行分片上传。可以通过`SliceSize`设置分片上传阈值，通过`AsyncLimit`设置分片并发上传量；如：
+
+By default, large files (>1M) will be uploaded in multiple parts. You can set the multi-part upload threshold through `SliceSize`, and set the multi-part concurrent upload limit through `AsyncLimit`; for example:
+
+```
+cos_put_options: '{"SliceSize":1048576,"AsyncLimit":3}'
+```
+
+### 使用临时密钥 Using temporary key
 
 当[使用临时密钥](https://cloud.tencent.com/document/product/1312/48195)时，需要授权**所有**你要用到的功能权限：
 
