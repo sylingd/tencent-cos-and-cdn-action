@@ -43,7 +43,7 @@ jobs:
           session_token: ${{ steps.fetch-token.outputs.TMP_TOKEN }}
           cos_bucket: deploy-1251717201
           cos_region: ap-chengdu
-          cos_replace: crc64ecma
+          cos_replace_file: crc64ecma
           local_path: ${{ github.workspace }}/upload_folder
           remote_path: /demo/actions/cdn-replace
           clean: false
