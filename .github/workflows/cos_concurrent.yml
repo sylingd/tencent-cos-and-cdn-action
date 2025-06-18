@@ -1,4 +1,4 @@
-name: COS Replace Test
+name: COS Concurrent Test
 
 jobs:
   build:
@@ -30,11 +30,16 @@ jobs:
       
       - name: Genetare files
         run: |
-          date > $GITHUB_WORKSPACE/upload_folder/date.txt
+          for i in {1..50}; do
+            # 生成随机文件名
+            filename=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)
 
-          length=$(( RANDOM % 32 + 8 ))
-          date +%s%N | md5sum | head -c $length > $GITHUB_WORKSPACE/upload_folder/random.txt
-
+            # 创建文件并写入随机内容
+            random_line=$(head /dev/urandom | tr -dc '[:graph:]' | head -c "$line_length")
+            echo "$random_line" >> "$GITHUB_WORKSPACE/upload_folder/${filename}.txt"
+              
+            echo "已创建文件: $GITHUB_WORKSPACE/upload_folder/${filename}.txt"
+          done
       - name: Test Action
         uses: sylingd/tencent-cos-and-cdn-action@dev
         with:
@@ -44,6 +49,7 @@ jobs:
           cos_bucket: deploy-1251717201
           cos_region: ap-chengdu
           cos_replace_file: crc64ecma
+          cos_init_options: '{"FileParallelLimit":3}'
           local_path: ${{ github.workspace }}/upload_folder
-          remote_path: /demo/actions/cdn-replace
+          remote_path: /demo/actions/cdn-concurrent
           clean: false
