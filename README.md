@@ -132,7 +132,7 @@ cos_put_options: '{"SliceSize":1048576,"AsyncLimit":3}'
 You can enable concurrent uploads by setting `FileParallelLimit` in `cos_init_options`. For example:
 
 ```
-cos_put_options: '{"FileParallelLimit":3}'
+cos_init_options: '{"FileParallelLimit":3}'
 
 ```
 
