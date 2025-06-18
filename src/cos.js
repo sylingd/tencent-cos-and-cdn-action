@@ -70,7 +70,7 @@ class COS {
     this.bucket = inputs.cos_bucket;
     this.region = inputs.cos_region;
     this.localPath = inputs.local_path;
-    this.remotePath = inputs.remote_path || '';
+    this.remotePath = normalizeObjectKey(inputs.remote_path || '');
     this.replace = inputs.cos_replace_file || "true";
     this.clean = inputs.clean === "true";
     if (inputs.cos_put_options) {

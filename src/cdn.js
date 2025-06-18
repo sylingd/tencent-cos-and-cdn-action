@@ -48,7 +48,7 @@ class CDN {
     this.clean = inputs.clean === 'true';
     this.waitFlush = inputs.cdn_wait_flush === 'true';
     this.cdnPrefix = inputs.cdn_prefix || '';
-    this.remotePath = inputs.remote_path || '';
+    this.remotePath = normalizeObjectKey(inputs.remote_path || '');
 
     if (!this.cdnPrefix.endsWith('/')) {
       this.cdnPrefix += '/';
