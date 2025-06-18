@@ -48,8 +48,9 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - `cos_replace_file`: Whether to replace files with the same name. Default is `true`
   - `true` Replace all (suitable for scenarios where a lot of files change each time)
   - `false` Do not replace all (suitable for scenarios where a few files change each time and the file name contains hash)
+  - `size` Replace files with inconsistent sizes
   - `crc64ecma` Replace changed files through crc64ecma comparison (suitable for scenarios with a large number of files)
-  - `false` or `crc64ecma` can reduce write requests to some extent.
+  - `false` / `size` / `crc64ecma` can reduce write requests to some extent.
 - `cdn_wait_flush`: Whether to wait for CDN refresh to complete. Default is `false`
 - `eo_zone`: The Zone ID if you are using Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
 - `local_path`(**Required**): Local path to be uploaded to COS. Directory or file is allowed
