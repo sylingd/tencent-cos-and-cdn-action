@@ -253,9 +253,6 @@ class COS {
 
       // 队列上传进度改变
       const handleListUpdate = (data) => {
-        self.list = data.list;
-        self.total = data.list.length;
-
         const notFinished = data.list.filter(x => !finished.includes(x.Key));
 
         if (core.isDebug()) {
