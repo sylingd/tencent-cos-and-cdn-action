@@ -38,6 +38,7 @@ jobs:
             filename=$(head -c 32 /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)
 
             # 创建文件并写入随机内容
+            line_length=$((20 + RANDOM % 31))
             random_line=$(head -c 100 /dev/urandom | tr -dc '[:graph:]' | head -c "$line_length")
             echo "$random_line" >> "$GITHUB_WORKSPACE/upload_folder/${filename}.txt"
               
