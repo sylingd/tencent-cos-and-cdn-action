@@ -159,8 +159,8 @@ class COS {
       if (this.replace === 'size' || this.replace === 'crc64ecma') {
         // check file size is match
         const fileInfo = await fs.stat(localPath);
-        core.debug(`[cos] [shouldUploadFile] ${basePath} size is: local ${fileInfo.size} remote ${this.remoteFiles[p].Size}`);
-        if (String(fileInfo.size) !== String(this.remoteFiles[p].Size)) {
+        core.debug(`[cos] [shouldUploadFile] ${basePath} size is: local ${fileInfo.size} remote ${this.remoteFiles[basePath].Size}`);
+        if (String(fileInfo.size) !== String(this.remoteFiles[basePath].Size)) {
           return true;
         }
       }
