@@ -17,8 +17,9 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - `cos_replace_file`: 是否替换同名文件，默认为`true`
   - `true` 全部替换（适合每次文件变更非常多的场景）
   - `false` 全部不替换（适合每次文件变更较少且名称中带有 hash 的场景）
+  - `size` 替换大小不一致的文件
   - `crc64ecma` 通过crc64ecma对比，替换有变更的文件（适合文件数量较多的场景）
-  - `false`或`crc64ecma`可以在一定程度上减少写请求。
+  - `false`、`size`、`crc64ecma`可以在一定程度上减少写请求。
 - `cdn_type`: CDN 类型，可选普通CDN（`cdn`）或 EdgeOne CDN（`eo`）。默认为`cdn`
 - `cdn_prefix`: 若你使用腾讯云 CDN 或 EdgeOne，此处填写 CDN 的 URL 前缀。若为空，则不刷新 CDN 缓存
 - `cdn_wait_flush`: 是否等待 CDN 刷新完成。默认为`false`

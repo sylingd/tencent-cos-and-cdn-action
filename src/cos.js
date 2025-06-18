@@ -145,7 +145,9 @@ class COS {
         // new file, skip head operator
         core.debug(`[cos] [checkFileAndUpload] ${p} is new file`);
         return doUpload();
-      } else {
+      }
+
+      if (this.replace === 'size' || this.replace === 'crc64ecma') {
         // check file size is match
         const fileInfo = await fs.stat(localPath);
         core.debug(`[cos] [checkFileAndUpload] ${p} size is: local ${fileInfo.size} remote ${this.remoteFiles[p].Size}`);
@@ -208,7 +210,7 @@ class COS {
           Bucket: this.bucket,
           Region: this.region,
           Prefix: normalizeObjectKey(this.remotePath),
-          NextMarker: nextMarker,
+          Marker: nextMarker,
         },
         function (err, data) {
           if (err) {
