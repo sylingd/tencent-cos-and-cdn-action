@@ -2,15 +2,22 @@ const core = require('@actions/core');
 const COS_SDK = require("cos-nodejs-sdk-v5");
 const fs = require("fs/promises");
 const path = require("path");
-const { crc64 } = require("crc64-ecma");
+const crc64 = require("crc64-ecma182.js");
 const { normalizeObjectKey } = require("./utils");
 
 const FILE_EXISTS = Symbol();
 const HEAD_FAILED = Symbol();
 
-async function hashFile(filePath) {
-  const fileBuffer = await fs.readFile(filePath);
-  return crc64(fileBuffer).toString();
+function hashFile(filePath) {
+  return new Promise((resolve, reject) => {
+    crc64.crc64File(filePath, (err, ret) => {
+      if (ret) {
+        resolve(String(ret));
+      } else {
+        reject(err);
+      }
+    });
+  });
 }
 
 class COS {

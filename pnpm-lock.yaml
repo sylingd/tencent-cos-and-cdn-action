@@ -17,9 +17,9 @@ importers:
       cos-nodejs-sdk-v5:
         specifier: 2.16.0-beta.3
         version: 2.16.0-beta.3
-      crc64-ecma:
-        specifier: ^2.0.0
-        version: 2.0.0
+      crc64-ecma182.js:
+        specifier: ^2.0.2
+        version: 2.0.2
       tencentcloud-sdk-nodejs:
         specifier: ^4.1.56
         version: 4.1.56
@@ -175,9 +175,8 @@ packages:
     resolution: {integrity: sha512-f5YUT8L/Xc6ZBsXKkEhyd7NXy9gfEf0QZlBnXVC7S29AwGdIweRlvT9Ba6jRypOAPCmYNZfgC76szc38GshJXA==}
     engines: {node: '>= 8'}
 
-  crc64-ecma@2.0.0:
-    resolution: {integrity: sha512-Nx3EV92nVpZasoXg+T53SzPQnJVnKT5ou6VacNzbXeDw3+oH8z6evRYQd6tbA9Eh+nVQLTKMvG4BvXXHeaED1A==}
-    engines: {node: '>=10.8.0'}
+  crc64-ecma182.js@2.0.2:
+    resolution: {integrity: sha512-mBItyEN8IYWic/bTU1EgLOSjIOdwe3H+arZ3gGp5FJRpN+eVAPPA5iEHGkPlTbRZCemHb1zLJigQ4HXjUb7jAg==}
 
   dashdash@1.14.1:
     resolution: {integrity: sha512-jRFi8UDGo6j+odZiEpjazZaWqEal3w/basFjQHQEwVtZJGDpxbH1MeYluwCS8Xq5wmLJooDlMgvVarmWfGM44g==}
@@ -730,7 +729,7 @@ snapshots:
       tunnel-agent: 0.6.0
       uuid: 8.3.2
 
-  crc64-ecma@2.0.0: {}
+  crc64-ecma182.js@2.0.2: {}
 
   dashdash@1.14.1:
     dependencies:
