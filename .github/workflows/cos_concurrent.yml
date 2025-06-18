@@ -35,10 +35,10 @@ jobs:
         run: |
           for i in {1..50}; do
             # 生成随机文件名
-            filename=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)
+            filename=$(head -c 32 /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)
 
             # 创建文件并写入随机内容
-            random_line=$(head /dev/urandom | tr -dc '[:graph:]' | head -c "$line_length")
+            random_line=$(head -c 100 /dev/urandom | tr -dc '[:graph:]' | head -c "$line_length")
             echo "$random_line" >> "$GITHUB_WORKSPACE/upload_folder/${filename}.txt"
               
             echo "已创建文件: $GITHUB_WORKSPACE/upload_folder/${filename}.txt"
