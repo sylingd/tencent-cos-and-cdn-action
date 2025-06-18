@@ -125,6 +125,17 @@ By default, large files (>1M) will be uploaded in multiple parts. You can set th
 cos_put_options: '{"SliceSize":1048576,"AsyncLimit":3}'
 ```
 
+### 并发上传 Concurrent uploads
+
+可以通过`cos_init_options`设置`FileParallelLimit`打开并发上传功能。例如：
+
+You can enable concurrent uploads by setting `FileParallelLimit` in `cos_init_options`. For example:
+
+```
+cos_put_options: '{"FileParallelLimit":3}'
+
+```
+
 ### 使用临时密钥 Using temporary key
 
 当[使用临时密钥](https://cloud.tencent.com/document/product/1312/48195)时，需要授权**所有**你要用到的功能权限：

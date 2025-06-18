@@ -44,6 +44,7 @@ class COS {
   constructor(inputs) {
     const opt = {
       UseAccelerate: inputs.cos_accelerate === "true",
+      FileParallelLimit: 1, // 默认不使用并发上传
     };
     // Read other options
     try {
@@ -135,23 +136,25 @@ class COS {
     });
   }
 
-  async checkFileAndUpload(p) {
-    const fileKey = normalizeObjectKey(this.remotePath + '/' + p);
-    const localPath = path.join(this.localPath, p);
+  generateFileInfo(p) {
+    return {
+      objectKey: normalizeObjectKey(this.remotePath + '/' + p),
+      localPath: path.join(this.localPath, p)
+    };
+  }
 
-    const doUpload = () => this.uploadFile(fileKey, localPath);
-
-    core.debug(`[cos] [checkFileAndUpload] ${p} key: ${fileKey}`);
+  async shouldUploadFile(objectKey, localPath) {
+    core.debug(`[cos] [checkFileAndUpload] ${p} key: ${objectKey}`);
     // do not check
     if (this.replace === 'true') {
-      return doUpload();
+      return true;
     }
     // has listed bucket
     if (typeof this.remoteFiles !== 'undefined') {
       if (typeof this.remoteFiles[p] === 'undefined') {
         // new file, skip head operator
         core.debug(`[cos] [checkFileAndUpload] ${p} is new file`);
-        return doUpload();
+        return true;
       }
 
       if (this.replace === 'size' || this.replace === 'crc64ecma') {
@@ -159,18 +162,18 @@ class COS {
         const fileInfo = await fs.stat(localPath);
         core.debug(`[cos] [checkFileAndUpload] ${p} size is: local ${fileInfo.size} remote ${this.remoteFiles[p].Size}`);
         if (String(fileInfo.size) !== String(this.remoteFiles[p].Size)) {
-          return doUpload();
+          return true;
         }
       }
     }
     let info = {};
     try {
-      info = await this.headObject(fileKey);
+      info = await this.headObject(objectKey);
     } catch (e) {
       if (e.code === '404') {
         core.debug(`[cos] [checkFileAndUpload] ${p} head return 404`);
         // file not exists, continue upload
-        return doUpload();
+        return true;
       } else {
         // head failed, do not upload
         return HEAD_FAILED;
@@ -184,7 +187,7 @@ class COS {
       if (exist === cur) {
         return FILE_EXISTS;
       } else {
-        return doUpload();
+        return true;
       }
     }
     // file exists, do not upload
@@ -230,31 +233,52 @@ class COS {
     });
   }
 
-  async uploadFiles(localFiles) {
-    const size = localFiles.size;
-    let index = 0;
-    let percent = 0;
-    const changedFiles = [];
-    for (const file of localFiles) {
-      index++;
-      percent = parseInt((index / size) * 100);
-      let result = 'uploaded';
-      const res = await this.checkFileAndUpload(file);
-      if (res === FILE_EXISTS) {
-        result = 'skiped: file exists';
-      } else if (res === HEAD_FAILED) {
-        result = 'skiped: head failed';
-      } else {
-        changedFiles.push(file);
+  uploadFiles(localFiles) {
+    return new Promise(async (resolve) => {
+      const size = localFiles.size;
+      const changedFiles = [];
+
+      // 已经显示过已完成的列表
+      const finished = [];
+
+      // 单个文件已完成（含上传完成或被跳过）
+      const onFileFinish = (state, key) => {
+        finished.push(key);
+        const percent = parseInt((finished.length / size) * 100);
+        console.log(`>> [${finished.length}/${size}, ${percent}%] ${state} ${key}`);
+        if (finished.length === size) {
+          this.cos.off('list-update', handleListUpdate);
+          resolve(changedFiles);
+        }
+      };
+
+      // 队列上传进度改变
+      const handleListUpdate = (data) => {
+        self.list = data.list;
+        self.total = data.list.length;
+
+        data.list.filter(x => !finished.includes(x.Key)).forEach(item => {
+          if (['success', 'canceld'].includes(item.state)) {
+            onFileFinish(item.state, item.Key)
+          }
+        });
       }
-      console.log(
-        `>> [${index}/${size}, ${percent}%] ${result} ${path.join(
-          this.localPath,
-          file
-        )}`
-      );
-    }
-    return changedFiles;
+
+      this.cos.on('list-update', handleListUpdate);
+
+      for (const file of localFiles) {
+        const { objectKey, localPath } = this.generateFileInfo(file);
+        const shoudUpload = await this.shouldUploadFile(objectKey, localPath);
+        if (shoudUpload === FILE_EXISTS) {
+          onFileFinish('skiped(file exists)', objectKey);
+        } else if (shoudUpload === HEAD_FAILED) {
+          onFileFinish('skiped(head failed)', objectKey);
+        } else {
+          this.uploadFile(objectKey, localPath);
+          changedFiles.push(file);
+        }
+      }
+    });
   }
 
   async collectRemoteFiles() {
