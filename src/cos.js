@@ -143,23 +143,23 @@ class COS {
     };
   }
 
-  async shouldUploadFile(objectKey, localPath) {
+  async shouldUploadFile(basePath, objectKey, localPath) {
     // do not check
     if (this.replace === 'true') {
       return true;
     }
     // has listed bucket
     if (typeof this.remoteFiles !== 'undefined') {
-      if (typeof this.remoteFiles[p] === 'undefined') {
+      if (typeof this.remoteFiles[basePath] === 'undefined') {
         // new file, skip head operator
-        core.debug(`[cos] [shouldUploadFile] ${objectKey} is new file`);
+        core.debug(`[cos] [shouldUploadFile] ${basePath} is new file`);
         return true;
       }
 
       if (this.replace === 'size' || this.replace === 'crc64ecma') {
         // check file size is match
         const fileInfo = await fs.stat(localPath);
-        core.debug(`[cos] [shouldUploadFile] ${objectKey} size is: local ${fileInfo.size} remote ${this.remoteFiles[p].Size}`);
+        core.debug(`[cos] [shouldUploadFile] ${basePath} size is: local ${fileInfo.size} remote ${this.remoteFiles[p].Size}`);
         if (String(fileInfo.size) !== String(this.remoteFiles[p].Size)) {
           return true;
         }
@@ -170,7 +170,7 @@ class COS {
       info = await this.headObject(objectKey);
     } catch (e) {
       if (e.code === '404') {
-        core.debug(`[cos] [shouldUploadFile] ${objectKey} head return 404`);
+        core.debug(`[cos] [shouldUploadFile] ${basePath} head return 404`);
         // file not exists, continue upload
         return true;
       } else {
@@ -182,7 +182,7 @@ class COS {
     if (this.replace === 'crc64ecma') {
       const exist = info.headers['x-cos-hash-crc64ecma'];
       const cur = await hashFile(localPath);
-      core.debug(`[cos] [shouldUploadFile] ${objectKey} crc64ecma is: local ${cur} remote ${exist}`);
+      core.debug(`[cos] [shouldUploadFile] ${basePath} crc64ecma is: local ${cur} remote ${exist}`);
       if (exist === cur) {
         return FILE_EXISTS;
       } else {
@@ -273,7 +273,7 @@ class COS {
 
       for (const file of localFiles) {
         const { objectKey, localPath } = this.generateFileInfo(file);
-        const shoudUpload = await this.shouldUploadFile(objectKey, localPath);
+        const shoudUpload = await this.shouldUploadFile(file, objectKey, localPath);
         if (shoudUpload === FILE_EXISTS) {
           onFileFinish('skiped(file exists)', objectKey);
         } else if (shoudUpload === HEAD_FAILED) {
