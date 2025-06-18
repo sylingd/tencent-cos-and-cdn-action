@@ -256,12 +256,12 @@ class COS {
         const notFinished = data.list.filter(x => !finished.includes(x.Key));
 
         if (core.isDebug()) {
-          core.debug(`[cos] [uploadFiles] [handleListUpdate] ${JSON.stringify(notFinished)}`);
+          core.debug(`[cos] [uploadFiles] [handleListUpdate] ${JSON.stringify(notFinished.map(x => [x.state, x.Key]))}`);
         }
 
         notFinished.forEach(item => {
           if (['success', 'canceled', 'error'].includes(item.state)) {
-            onFileFinish(item.state, item.Key)
+            onFileFinish(item.state, item.Key);
           }
         });
       }
