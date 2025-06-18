@@ -257,8 +257,14 @@ class COS {
         self.list = data.list;
         self.total = data.list.length;
 
-        data.list.filter(x => !finished.includes(x.Key)).forEach(item => {
-          if (['success', 'canceld'].includes(item.state)) {
+        const notFinished = data.list.filter(x => !finished.includes(x.Key));
+
+        if (core.isDebug()) {
+          core.debug(`[cos] [uploadFiles] [handleListUpdate] ${JSON.stringify(notFinished)}`);
+        }
+
+        notFinished.forEach(item => {
+          if (['success', 'canceled', 'error'].includes(item.state)) {
             onFileFinish(item.state, item.Key)
           }
         });
@@ -296,6 +302,7 @@ class COS {
         this.remoteFiles[p] = e;
       }
       nextMarker = data.NextMarker;
+      core.debug(`[cos] [collectRemoteFiles] IsTruncated: ${data.IsTruncated}, NextMarker: ${nextMarker}`);
     } while (data.IsTruncated === "true");
 
     if (core.isDebug()) {
