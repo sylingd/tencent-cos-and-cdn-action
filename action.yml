@@ -31,6 +31,9 @@ inputs:
   cos_replace_file:
     description: 'Whether to replace the existing file. Default is true'
     required: false
+  cos_file_check_concurrent:
+    description: 'Check whether the file needs to be uploaded concurrently'
+    required: false
   cdn_type:
     description: 'CDN type, cdn or eo. Default is cdn'
     required: false

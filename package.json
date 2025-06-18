@@ -14,6 +14,7 @@
     "@actions/github": "^6.0.1",
     "cos-nodejs-sdk-v5": "2.16.0-beta.3",
     "crc64-ecma182.js": "^2.0.2",
+    "fastq": "^1.19.1",
     "tencentcloud-sdk-nodejs": "^4.1.56"
   },
   "devDependencies": {

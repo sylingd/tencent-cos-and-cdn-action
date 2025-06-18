@@ -1,5 +1,7 @@
+const os = require('os');
 const core = require('@actions/core');
 const COS_SDK = require("cos-nodejs-sdk-v5");
+const fastq = require('fastq')
 const fs = require("fs/promises");
 const path = require("path");
 const crc64 = require("crc64-ecma182.js");
@@ -7,6 +9,15 @@ const { normalizeObjectKey } = require("./utils");
 
 const FILE_EXISTS = Symbol();
 const HEAD_FAILED = Symbol();
+
+function getThreadCount() {
+  try {
+    return 2 * os.cpus().length;
+  } catch (e) {
+    // ignore
+  }
+  return 3;
+}
 
 function hashFile(filePath) {
   return new Promise((resolve, reject) => {
@@ -30,6 +41,7 @@ class COS {
       "cos_init_options",
       "cos_put_options",
       "cos_replace_file",
+      "cos_file_check_concurrent",
       "cos_bucket",
       "cos_region",
       "local_path",
@@ -40,6 +52,7 @@ class COS {
 
   putOptions = {};
   remoteFiles = undefined;
+  checkConcurrent = 3;
 
   constructor(inputs) {
     const opt = {
@@ -81,6 +94,10 @@ class COS {
     this.remotePath = normalizeObjectKey(inputs.remote_path || '');
     this.replace = inputs.cos_replace_file || "true";
     this.clean = inputs.clean === "true";
+    this.checkConcurrent = Number(inputs.cos_file_check_concurrent);
+    if (Number.isNaN(this.checkConcurrent) || this.checkConcurrent <= 0) {
+      this.checkConcurrent = getThreadCount();
+    }
     if (inputs.cos_put_options) {
       try {
         const res = JSON.parse(inputs.cos_put_options);
@@ -261,25 +278,28 @@ class COS {
 
         notFinished.forEach(item => {
           if (['success', 'canceled', 'error'].includes(item.state)) {
-            onFileFinish(item.state, item.Key);
+            onFileFinish(`upload ${item.state}`, item.Key);
           }
         });
       }
 
       this.cos.on('list-update', handleListUpdate);
-
-      for (const file of localFiles) {
+      
+      const uploadQueue = fastq.promise(async (file) => {
         const { objectKey, localPath } = this.generateFileInfo(file);
-        const shoudUpload = await this.shouldUploadFile(file, objectKey, localPath);
-        if (shoudUpload === FILE_EXISTS) {
+        const shouldUpload = await this.shouldUploadFile(file, objectKey, localPath);
+        if (shouldUpload === FILE_EXISTS) {
           onFileFinish('skiped(file exists)', objectKey);
-        } else if (shoudUpload === HEAD_FAILED) {
+        } else if (shouldUpload === HEAD_FAILED) {
           onFileFinish('skiped(head failed)', objectKey);
         } else {
           this.uploadFile(objectKey, localPath);
           changedFiles.push(file);
         }
-      }
+      }, this.checkConcurrent);
+
+      // 处理所有文件
+      localFiles.forEach(file => uploadQueue.push(file));
     });
   }
 

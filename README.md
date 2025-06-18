@@ -20,6 +20,7 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
   - `size` 替换大小不一致的文件
   - `crc64ecma` 通过crc64ecma对比，替换有变更的文件（适合文件数量较多的场景）
   - `false`、`size`、`crc64ecma`可以在一定程度上减少写请求。
+- `cos_file_check_concurrent`: 当`cos_replace_file`不为`true`时，检查文件是否需要上传的并发量。默认为CPU核心数*2
 - `cdn_type`: CDN 类型，可选普通CDN（`cdn`）或 EdgeOne CDN（`eo`）。默认为`cdn`
 - `cdn_prefix`: 若你使用腾讯云 CDN 或 EdgeOne，此处填写 CDN 的 URL 前缀。若为空，则不刷新 CDN 缓存
 - `cdn_wait_flush`: 是否等待 CDN 刷新完成。默认为`false`
@@ -51,6 +52,7 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
   - `size` Replace files with inconsistent sizes
   - `crc64ecma` Replace changed files through crc64ecma comparison (suitable for scenarios with a large number of files)
   - `false` / `size` / `crc64ecma` can reduce write requests to some extent.
+- `cos_file_check_concurrent`: When `cos_replace_file` is not `true`, check whether the file needs to be uploaded concurrently. Default is CPU cores * 2
 - `cdn_wait_flush`: Whether to wait for CDN refresh to complete. Default is `false`
 - `eo_zone`: The Zone ID if you are using Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
 - `local_path`(**Required**): Local path to be uploaded to COS. Directory or file is allowed
