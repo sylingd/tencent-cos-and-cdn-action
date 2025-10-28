@@ -2,9 +2,6 @@ name: Config file test
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - test
 
 jobs:
   build:
