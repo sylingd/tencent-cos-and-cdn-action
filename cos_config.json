@@ -1,0 +1,20 @@
+{
+  "cos_bucket": "deploy-1251717201",
+  "cos_region": "ap-chengdu",
+  "cos_put_options": {
+    "CacheControl":"max-age=43220"
+  },
+  "remote_path": "/demo/actions/config_file",
+  "clean": false,
+  "cos_replace_file": "size",
+  "cos_replace_rules": [
+    {
+      "name": "a.html",
+      "policy": "true"
+    },
+    {
+      "match": "^.*\\.txt$",
+      "policy": "false"
+    }
+  ]
+}

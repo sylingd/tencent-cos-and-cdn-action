@@ -1,4 +1,4 @@
-name: CDN Test
+name: Config file test
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ jobs:
       - name: Fetch Token
         id: fetch-token
         run: |
-          JSON_RESPONSE=$(curl -X GET -s -H "Authorization: Bearer $TOKEN" --globoff "https://server-api.sylibs.com/tencent-cloud/GetFederationToken?region=ap-beijing&name=github-bot&policy={%22version%22%3A%222.0%22%2C%22statement%22%3A[{%22effect%22%3A%22allow%22%2C%22action%22%3A[%22cos%3AHeadObject%22%2C%22cos%3APutObject%22%2C%22cos%3ADeleteObject%22%2C%22cos%3AGetBucket%22]%2C%22resource%22%3A[%22qcs%3A%3Acos%3Aap-chengdu%3Auid%2F1251717201%3Adeploy-1251717201%2F*%22]}%2C{%22effect%22%3A%22allow%22%2C%22action%22%3A[%22cdn%3APurgePathCache%22%2C%22cdn%3APurgeUrlsCache%22]%2C%22resource%22%3A[%22*%22]}]}&duration=600")
+          JSON_RESPONSE=$(curl -X GET -s -H "Authorization: Bearer $TOKEN" --globoff "https://server-api.sylibs.com/tencent-cloud/GetFederationToken?region=ap-beijing&name=github-bot&policy={%22version%22%3A%222.0%22%2C%22statement%22%3A[{%22effect%22%3A%22allow%22%2C%22action%22%3A[%22cos%3AHeadObject%22%2C%22cos%3APutObject%22%2C%22cos%3ADeleteObject%22%2C%22cos%3AGetBucket%22]%2C%22resource%22%3A[%22qcs%3A%3Acos%3Aap-chengdu%3Auid%2F1251717201%3Adeploy-1251717201%2F*%22]}]}&duration=600")
           
           TMP_SECRET_ID=$(echo $JSON_RESPONSE | jq -r .Credentials.TmpSecretId)
           TMP_SECRET_KEY=$(echo $JSON_RESPONSE | jq -r .Credentials.TmpSecretKey)
@@ -30,18 +30,24 @@ jobs:
           echo "TMP_TOKEN=$TMP_TOKEN" >> $GITHUB_OUTPUT
         env:
           TOKEN: ${{ secrets.TENCENT_CLOUD_TOKEN }}
+      - name: Genetare files
+        run: |
+          for i in {1..50}; do
+            # 生成随机文件名
+            filename=$(head -c 32 /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)
+
+            # 创建文件并写入随机内容
+            line_length=$((20 + RANDOM % 31))
+            random_line=$(head -c 100 /dev/urandom | tr -dc '[:graph:]' | head -c "$line_length")
+            echo "$random_line" >> "$GITHUB_WORKSPACE/upload_folder/${filename}.txt"
+              
+            echo "已创建文件: $GITHUB_WORKSPACE/upload_folder/${filename}.txt"
+          done
       - name: Test Action
         uses: sylingd/tencent-cos-and-cdn-action@dev
         with:
           secret_id: ${{ steps.fetch-token.outputs.TMP_SECRET_ID }}
           secret_key: ${{ steps.fetch-token.outputs.TMP_SECRET_KEY }}
           session_token: ${{ steps.fetch-token.outputs.TMP_TOKEN }}
-          cos_bucket: deploy-1251717201
-          cos_region: ap-chengdu
-          cos_put_options: '{"CacheControl":"max-age=43220"}'
-          cdn_type: cdn
-          cdn_prefix: https://cdn.sylibs.com/demo/
-          cdn_wait_flush: true
           local_path: ${{ github.workspace }}/upload_folder
-          remote_path: /demo/actions/cdn
-          clean: false
+          config_file: ${{ github.workspace }}/cos_config.json

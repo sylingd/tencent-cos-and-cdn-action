@@ -45,7 +45,7 @@ jobs:
             echo "已创建文件: $GITHUB_WORKSPACE/upload_folder/${filename}.txt"
           done
       - name: Test Action
-        uses: sylingd/tencent-cos-and-cdn-action@v1
+        uses: sylingd/tencent-cos-and-cdn-action@dev
         with:
           secret_id: ${{ steps.fetch-token.outputs.TMP_SECRET_ID }}
           secret_key: ${{ steps.fetch-token.outputs.TMP_SECRET_KEY }}
