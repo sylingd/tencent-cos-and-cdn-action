@@ -62,5 +62,5 @@ inputs:
     description: 'COS config file path. Default is empty'
     required: false
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
